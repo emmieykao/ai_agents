@@ -1,0 +1,11 @@
+AI Document Reader — Sample Document
+
+This is a sample text file in the documents/ folder. The agent can list,
+read, and search files here to answer your questions.
+
+Key facts:
+- The Vercel AI SDK provides ToolLoopAgent for building agents with tools.
+- Tools let the model read files, call APIs, and perform other actions.
+- Place your .txt, .md, or .pdf files in this folder to query them.
+
+Try asking: "What file types does this project support?"

@@ -1,0 +1,50 @@
+{
+  "name": "contact-info",
+  "title": "Contact Information",
+  "description": "Basic contact details, typically extracted from a resume or application document.",
+  "fields": [
+    {
+      "id": "full_name",
+      "label": "Full Name",
+      "type": "text",
+      "required": true,
+      "description": "Legal or preferred full name"
+    },
+    {
+      "id": "email",
+      "label": "Email Address",
+      "type": "email",
+      "required": true
+    },
+    {
+      "id": "phone",
+      "label": "Phone Number",
+      "type": "phone",
+      "required": false
+    },
+    {
+      "id": "address",
+      "label": "Mailing Address",
+      "type": "textarea",
+      "required": false
+    },
+    {
+      "id": "date_of_birth",
+      "label": "Date of Birth",
+      "type": "date",
+      "required": false
+    },
+    {
+      "id": "organization",
+      "label": "Current Organization",
+      "type": "text",
+      "required": false
+    },
+    {
+      "id": "job_title",
+      "label": "Job Title",
+      "type": "text",
+      "required": false
+    }
+  ]
+}

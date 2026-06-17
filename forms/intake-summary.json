@@ -1,0 +1,46 @@
+{
+  "name": "intake-summary",
+  "title": "Document Intake Summary",
+  "description": "Summarize key facts from a source document into a structured intake record.",
+  "fields": [
+    {
+      "id": "document_title",
+      "label": "Document Title",
+      "type": "text",
+      "required": true
+    },
+    {
+      "id": "document_date",
+      "label": "Document Date",
+      "type": "date",
+      "required": false
+    },
+    {
+      "id": "author",
+      "label": "Author or Organization",
+      "type": "text",
+      "required": false
+    },
+    {
+      "id": "summary",
+      "label": "Summary",
+      "type": "textarea",
+      "required": true,
+      "description": "2-4 sentence summary of the document"
+    },
+    {
+      "id": "key_points",
+      "label": "Key Points",
+      "type": "textarea",
+      "required": true,
+      "description": "Bullet-style list of the most important points"
+    },
+    {
+      "id": "action_items",
+      "label": "Action Items",
+      "type": "textarea",
+      "required": false,
+      "description": "Any follow-up actions mentioned in the document"
+    }
+  ]
+}

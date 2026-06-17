@@ -1,0 +1,14 @@
+RESUME
+
+Full Name: Jane Doe
+Email: jane.doe@example.com
+Phone: (555) 123-4567
+
+Current Organization: Acme Corporation
+Job Title: Software Engineer
+
+Mailing Address:
+123 Main Street
+San Francisco, CA 94102
+
+I consent to being contacted regarding opportunities.
