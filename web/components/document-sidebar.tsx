@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from 'react';
 import { formatBytes, formatDate } from '@/lib/format';
+import { pickPreferredDocumentClient } from '@/lib/preferred-document';
 import { FileUpload } from './file-upload';
 
 type DocumentEntry = {
@@ -11,10 +12,23 @@ type DocumentEntry = {
 };
 
 type DocumentSidebarProps = {
+  selectedDocument?: string;
+  preferredDocumentKeywords?: string[];
   onSelectDocument?: (name: string) => void;
+  onDocumentUploaded?: (name: string) => void;
+  onUploadComplete?: (result: {
+    document: { name: string };
+    fillableForm?: { name: string; fieldCount: number } | null;
+  }) => void;
 };
 
-export function DocumentSidebar({ onSelectDocument }: DocumentSidebarProps) {
+export function DocumentSidebar({
+  selectedDocument,
+  preferredDocumentKeywords = [],
+  onSelectDocument,
+  onDocumentUploaded,
+  onUploadComplete,
+}: DocumentSidebarProps) {
   const [documents, setDocuments] = useState<DocumentEntry[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -38,6 +52,24 @@ export function DocumentSidebar({ onSelectDocument }: DocumentSidebarProps) {
       }
 
       setDocuments(data.documents);
+
+      const preferred = pickPreferredDocumentClient(data.documents, {
+        keywords: preferredDocumentKeywords,
+      });
+
+      if (preferred && (!selectedDocument || preferredDocumentKeywords.length > 0)) {
+        const currentIsPreferred =
+          selectedDocument &&
+          preferredDocumentKeywords.some((keyword) =>
+            selectedDocument.toLowerCase().includes(keyword.toLowerCase()),
+          );
+
+        if (!selectedDocument || !currentIsPreferred) {
+          onSelectDocument?.(preferred.name);
+        }
+      } else if (!selectedDocument && data.documents.length > 0) {
+        onSelectDocument?.(data.documents[0].name);
+      }
     } catch (loadError) {
       setError(
         loadError instanceof Error
@@ -47,7 +79,7 @@ export function DocumentSidebar({ onSelectDocument }: DocumentSidebarProps) {
     } finally {
       setIsLoading(false);
     }
-  }, []);
+  }, [onSelectDocument, preferredDocumentKeywords, selectedDocument]);
 
   const readDocument = useCallback(async (name: string) => {
     setIsReading(true);
@@ -86,11 +118,20 @@ export function DocumentSidebar({ onSelectDocument }: DocumentSidebarProps) {
       <div>
         <h2 className="text-sm font-semibold">Documents</h2>
         <p className="mt-1 text-xs text-[var(--muted)]">
-          Upload, read, or ask the agent to summarize
+          Upload a source document for form filling
         </p>
       </div>
 
-      <FileUpload onUploaded={loadDocuments} />
+      <FileUpload
+        onUploaded={({ document, fillableForm }) => {
+          void loadDocuments();
+          onUploadComplete?.({ document, fillableForm });
+          if (!fillableForm) {
+            onDocumentUploaded?.(document.name);
+            onSelectDocument?.(document.name);
+          }
+        }}
+      />
 
       <div className="flex items-center justify-between">
         <span className="text-xs font-medium uppercase tracking-wide text-[var(--muted)]">
@@ -118,34 +159,43 @@ export function DocumentSidebar({ onSelectDocument }: DocumentSidebarProps) {
       )}
 
       <ul className="space-y-2 overflow-y-auto">
-        {documents.map((doc) => (
-          <li
-            key={doc.name}
-            className="rounded-lg border border-[var(--border)] bg-[var(--card)] p-3"
-          >
-            <p className="truncate text-sm font-medium">{doc.name}</p>
-            <p className="mt-1 text-xs text-[var(--muted)]">
-              {formatBytes(doc.sizeBytes)} · {formatDate(doc.modified)}
-            </p>
-            <div className="mt-2 flex gap-2">
-              <button
-                type="button"
-                disabled={isReading}
-                onClick={() => void readDocument(doc.name)}
-                className="rounded border border-[var(--border)] px-2 py-1 text-xs hover:border-[var(--accent)]"
-              >
-                Read
-              </button>
-              <button
-                type="button"
-                onClick={() => onSelectDocument?.(doc.name)}
-                className="rounded border border-[var(--border)] px-2 py-1 text-xs hover:border-[var(--accent)]"
-              >
-                Summarize
-              </button>
-            </div>
-          </li>
-        ))}
+        {documents.map((doc) => {
+          const isSelected = doc.name === selectedDocument;
+
+          return (
+            <li
+              key={doc.name}
+              className={`rounded-lg border p-3 ${
+                isSelected
+                  ? 'border-[var(--accent)] bg-blue-50/40 dark:bg-blue-950/20'
+                  : 'border-[var(--border)] bg-[var(--card)]'
+              }`}
+            >
+              <p className="truncate text-sm font-medium">{doc.name}</p>
+              <p className="mt-1 text-xs text-[var(--muted)]">
+                {formatBytes(doc.sizeBytes)} · {formatDate(doc.modified)}
+                {isSelected && ' · selected'}
+              </p>
+              <div className="mt-2 flex gap-2">
+                <button
+                  type="button"
+                  disabled={isReading}
+                  onClick={() => void readDocument(doc.name)}
+                  className="rounded border border-[var(--border)] px-2 py-1 text-xs hover:border-[var(--accent)]"
+                >
+                  Read
+                </button>
+                <button
+                  type="button"
+                  onClick={() => onSelectDocument?.(doc.name)}
+                  className="rounded border border-[var(--border)] px-2 py-1 text-xs hover:border-[var(--accent)]"
+                >
+                  Use as source
+                </button>
+              </div>
+            </li>
+          );
+        })}
       </ul>
 
       {preview && (
@@ -165,7 +215,7 @@ export function DocumentSidebar({ onSelectDocument }: DocumentSidebarProps) {
           </pre>
           {preview.truncated && (
             <p className="mt-2 text-xs italic text-[var(--muted)]">
-              Preview truncated. Use Summarize for full AI analysis.
+              Preview truncated.
             </p>
           )}
         </div>

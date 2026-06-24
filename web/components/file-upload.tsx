@@ -5,7 +5,10 @@ import { useCallback, useState } from 'react';
 const ACCEPTED_TYPES = '.txt,.md,.pdf';
 
 type FileUploadProps = {
-  onUploaded: () => void;
+  onUploaded: (result: {
+    document: { name: string };
+    fillableForm?: { name: string; fieldCount: number } | null;
+  }) => void;
 };
 
 export function FileUpload({ onUploaded }: FileUploadProps) {
@@ -35,8 +38,14 @@ export function FileUpload({ onUploaded }: FileUploadProps) {
           throw new Error(data.error ?? 'Upload failed');
         }
 
-        setSuccess(`Uploaded ${data.document.name}`);
-        onUploaded();
+        const fillableNote = data.fillableForm
+          ? ` · ${data.fillableForm.fieldCount} fillable fields detected`
+          : '';
+        setSuccess(`Uploaded ${data.document.name}${fillableNote}`);
+        onUploaded({
+          document: data.document,
+          fillableForm: data.fillableForm ?? null,
+        });
       } catch (uploadError) {
         setError(
           uploadError instanceof Error
