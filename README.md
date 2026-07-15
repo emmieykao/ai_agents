@@ -73,9 +73,19 @@ Requires **Node.js 18+**.
 
 4. **Run**
 
+   CLI:
    ```bash
    npm start
    ```
+
+   Web UI (Phase 1–2):
+   ```bash
+   cd web
+   cp .env.local.example .env.local   # or copy keys from ../.env
+   npm run dev
+   ```
+
+   Open [http://localhost:3000](http://localhost:3000). Upload `.txt`, `.md`, or `.pdf` files in the sidebar, then chat about them.
 
 ## Project structure
 
@@ -92,8 +102,11 @@ ai_agents/
 │       ├── document-tools.ts
 │       ├── form-tools.ts
 │       └── pdf-form-tools.ts
-├── scripts/
-│   └── create-sample-pdf-form.ts
+├── web/                    # Next.js chat UI
+│   ├── app/
+│   │   ├── api/chat/       # Agent API route
+│   │   └── page.tsx
+│   └── components/chat.tsx
 ├── .env.example
 └── package.json
 ```

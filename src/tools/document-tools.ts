@@ -1,11 +1,18 @@
-import { readdir, readFile, stat } from 'node:fs/promises';
+import { readdir, readFile } from 'node:fs/promises';
 import path from 'node:path';
-import { fileURLToPath } from 'node:url';
 import { extractText, getDocumentProxy } from 'unpdf';
 import { tool } from 'ai';
 import { z } from 'zod';
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
-export const DOCUMENTS_DIR = path.resolve(__dirname, '../../documents');
+import {
+  listDocumentFiles,
+  matchDocumentFiles,
+  pickPreferredDocument,
+  resolveDocumentName,
+} from '../lib/documents.js';
+import { extractContactHints } from '../lib/contact-extract.js';
+import { DOCUMENTS_DIR } from '../paths.js';
+
+export { DOCUMENTS_DIR };
 
 const SUPPORTED_EXTENSIONS = new Set(['.txt', '.md', '.pdf']);
 
@@ -46,36 +53,68 @@ export const listDocuments = tool({
     'List all readable documents in the documents folder (.txt, .md, .pdf)',
   inputSchema: z.object({}),
   execute: async () => {
-    const entries = await readdir(DOCUMENTS_DIR, { withFileTypes: true });
-    const files = await Promise.all(
-      entries
-        .filter((e) => e.isFile())
-        .filter((e) => SUPPORTED_EXTENSIONS.has(path.extname(e.name).toLowerCase()))
-        .map(async (e) => {
-          const filePath = path.join(DOCUMENTS_DIR, e.name);
-          const info = await stat(filePath);
-          return {
-            name: e.name,
-            sizeBytes: info.size,
-            modified: info.mtime.toISOString(),
-          };
-        }),
-    );
-
+    const files = await listDocumentFiles();
     return { documents: files, count: files.length };
+  },
+});
+
+export const findDocument = tool({
+  description:
+    'Find documents by partial name (e.g. "resume", "lecture", "notes") without needing the exact filename',
+  inputSchema: z.object({
+    query: z
+      .string()
+      .describe('Partial filename or keyword, e.g. "resume" or "lecture notes"'),
+  }),
+  execute: async ({ query }) => {
+    const files = await listDocumentFiles();
+    const matches = matchDocumentFiles(files, query);
+
+    return {
+      query,
+      matches: matches.map((file) => file.name),
+      count: matches.length,
+      bestMatch: matches[0]?.name ?? null,
+    };
   },
 });
 
 export const readDocument = tool({
   description:
-    'Read the full text content of a document by filename (e.g. "report.pdf")',
+    'Read document text. Use hint/partial names or useLatest instead of exact filenames when possible.',
   inputSchema: z.object({
     filename: z
       .string()
-      .describe('The document filename, e.g. "sample.txt" or "report.pdf"'),
+      .optional()
+      .describe('Exact filename if known, e.g. "report.pdf"'),
+    hint: z
+      .string()
+      .optional()
+      .describe('Partial name if exact filename is unknown, e.g. "resume"'),
+    useLatest: z
+      .boolean()
+      .optional()
+      .describe('Read the most relevant recent document'),
+    forContactInfo: z
+      .boolean()
+      .optional()
+      .describe(
+        'When filling contact forms, prefer resume/CV documents and return extracted contact hints',
+      ),
   }),
-  execute: async ({ filename }) => {
-    const filePath = resolveDocumentPath(filename);
+  execute: async ({ filename, hint, useLatest, forContactInfo }) => {
+    const resolved = await resolveDocumentName({
+      filename,
+      hint: forContactInfo && !filename && !hint ? 'resume' : hint,
+      useLatest,
+      keywords: forContactInfo ? ['resume', 'cv'] : undefined,
+    });
+
+    if ('error' in resolved) {
+      return resolved;
+    }
+
+    const filePath = resolveDocumentPath(resolved.filename);
     const ext = path.extname(filePath).toLowerCase();
 
     if (!SUPPORTED_EXTENSIONS.has(ext)) {
@@ -87,11 +126,17 @@ export const readDocument = tool({
     try {
       const content = await readDocumentContent(filePath);
       const truncated = content.length > 12_000;
+      const contactHints = extractContactHints(content);
+
       return {
-        filename,
+        filename: resolved.filename,
+        resolvedBy: resolved.resolvedBy,
+        alternatives: 'alternatives' in resolved ? resolved.alternatives : undefined,
         content: truncated ? content.slice(0, 12_000) : content,
         truncated,
         characterCount: content.length,
+        contactHints,
+        contactInfoFound: contactHints.hasContactInfo,
       };
     } catch (error) {
       return {
@@ -144,6 +189,7 @@ export const searchDocuments = tool({
 
 export const documentTools = {
   listDocuments,
+  findDocument,
   readDocument,
   searchDocuments,
 };

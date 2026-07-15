@@ -1,0 +1,49 @@
+{
+  "name": "job-application",
+  "title": "Job Application",
+  "description": "A simple application form for collecting candidate profile details.",
+  "fields": [
+    {
+      "id": "full_name",
+      "label": "Full Name",
+      "type": "text",
+      "required": true
+    },
+    {
+      "id": "email",
+      "label": "Email Address",
+      "type": "email",
+      "required": true
+    },
+    {
+      "id": "phone",
+      "label": "Phone Number",
+      "type": "phone",
+      "required": false
+    },
+    {
+      "id": "desired_role",
+      "label": "Desired Role",
+      "type": "text",
+      "required": true
+    },
+    {
+      "id": "years_experience",
+      "label": "Years of Experience",
+      "type": "text",
+      "required": false
+    },
+    {
+      "id": "portfolio_url",
+      "label": "Portfolio URL",
+      "type": "text",
+      "required": false
+    },
+    {
+      "id": "summary",
+      "label": "Professional Summary",
+      "type": "textarea",
+      "required": false
+    }
+  ]
+}

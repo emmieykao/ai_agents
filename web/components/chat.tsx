@@ -104,7 +104,7 @@ export function Chat({
         : `Call fillJsonFormFromSource for "${selectedForm}" with the resume as sourceDocument.`;
 
     void sendMessage({
-      text: `Fill the ${formLabel}. ${formHint} ${documentHint} Map fields accurately from the source document and save the completed form. Report any fields you could not fill.`,
+      text: `Fill the ${formLabel}. ${formHint} ${documentHint} As you go, explain your steps in plain language: your plan, which document you used and why, and which fields you mapped. Map fields accurately from the source document and save the completed form. End with a short summary and explicitly list any fields you could not fill.`,
     });
   }, [
     fillTrigger,

@@ -118,7 +118,19 @@ export function summarizeToolOutput(
   }
 
   if (typeof result.fieldCount === 'number' && toolName.includes('FromSource')) {
-    return `Mapped and saved ${result.fieldCount} field${result.fieldCount === 1 ? '' : 's'}`;
+    const base = `Mapped and saved ${result.fieldCount} field${result.fieldCount === 1 ? '' : 's'}`;
+    const parts: string[] = [];
+    if (typeof result.sourceDocument === 'string') {
+      const how =
+        typeof result.sourceResolvedBy === 'string'
+          ? ` (${result.sourceResolvedBy})`
+          : '';
+      parts.push(`from ${result.sourceDocument}${how}`);
+    }
+    if (Array.isArray(result.missingRequired) && result.missingRequired.length > 0) {
+      parts.push(`missing: ${result.missingRequired.join(', ')}`);
+    }
+    return parts.length > 0 ? `${base} ${parts.join(' · ')}` : base;
   }
 
   return null;

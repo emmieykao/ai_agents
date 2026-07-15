@@ -7,7 +7,10 @@
   "scripts": {
     "start": "tsx src/index.ts",
     "dev": "tsx src/index.ts",
+    "dev:web": "npm run dev --prefix web",
+    "build:web": "npm run build --prefix web",
     "typecheck": "tsc --noEmit",
+    "typecheck:web": "npm run typecheck --prefix web",
     "create-sample-pdf": "tsx scripts/create-sample-pdf-form.ts",
     "create-sample-document-pdf": "tsx scripts/create-sample-document-pdf.ts"
   },

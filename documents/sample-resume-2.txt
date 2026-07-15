@@ -1,0 +1,23 @@
+Maya Chen
+Software Engineer
+maya.chen@email.com | (650) 555-1178 | Seattle, WA
+
+SUMMARY
+Software engineer with 5 years of experience building scalable web applications and backend services. Strong background in TypeScript, Node.js, distributed systems, and product-focused engineering.
+
+EXPERIENCE
+Senior Software Engineer, Northwind Cloud (2022–Present)
+- Build and maintain APIs powering internal analytics workflows for enterprise clients.
+- Improved service response times by 35% by optimizing database queries and caching.
+- Collaborated with product managers and designers to ship new reporting features.
+
+Software Engineer, Harbor Labs (2019–2022)
+- Developed React-based dashboards and reusable frontend components for a data operations platform.
+- Implemented automated tests and CI pipelines to improve code reliability.
+- Mentored junior developers and contributed to engineering best practices.
+
+EDUCATION
+B.S. in Computer Science, University of Washington
+
+SKILLS
+TypeScript, JavaScript, Node.js, React, PostgreSQL, Docker, AWS, testing, system design

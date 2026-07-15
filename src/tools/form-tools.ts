@@ -1,12 +1,12 @@
 import { mkdir, readdir, readFile, writeFile } from 'node:fs/promises';
 import path from 'node:path';
-import { fileURLToPath } from 'node:url';
 import { tool } from 'ai';
 import { z } from 'zod';
+import { readDocumentTextByName } from '../lib/document-content.js';
+import { mapJsonFormValuesFromContent } from '../lib/pdf-form-mapper.js';
+import { COMPLETED_DIR, FORMS_DIR } from '../paths.js';
 
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
-export const FORMS_DIR = path.resolve(__dirname, '../../forms');
-export const COMPLETED_DIR = path.resolve(__dirname, '../../completed');
+export { FORMS_DIR, COMPLETED_DIR };
 
 const fieldSchema = z.object({
   id: z.string(),
@@ -82,6 +82,87 @@ export const getForm = tool({
   },
 });
 
+export const fillJsonFormFromSource = tool({
+  description:
+    'Preferred way to fill JSON forms. Reads a source document, maps resume/contact data to form field ids, and saves the completed form.',
+  inputSchema: z.object({
+    formName: z.string().describe('Form template name, e.g. "contact-info"'),
+    sourceDocument: z
+      .string()
+      .describe('Source document filename or hint, e.g. "resume"'),
+    notes: z.string().optional(),
+  }),
+  execute: async ({ formName, sourceDocument, notes }) => {
+    try {
+      const form = await loadForm(formName);
+      const source = await readDocumentTextByName({
+        filename: sourceDocument.includes('.') ? sourceDocument : undefined,
+        hint: sourceDocument.includes('.') ? undefined : sourceDocument,
+        keywords: ['resume', 'cv'],
+      });
+
+      if ('error' in source) {
+        return source;
+      }
+
+      const values = mapJsonFormValuesFromContent(form.fields, source.content);
+      const nonEmptyCount = Object.values(values).filter(Boolean).length;
+
+      if (nonEmptyCount === 0) {
+        return {
+          error:
+            'Could not extract any values from the source document for this form.',
+          sourceDocument: source.filename,
+          formName: form.name,
+        };
+      }
+
+      const missingRequired = form.fields
+        .filter(
+          (field) =>
+            field.required &&
+            (values[field.id] === undefined ||
+              values[field.id] === null ||
+              values[field.id] === ''),
+        )
+        .map((field) => field.id);
+
+      await mkdir(COMPLETED_DIR, { recursive: true });
+
+      const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+      const outputName = `${form.name}-${timestamp}.json`;
+      const outputPath = path.join(COMPLETED_DIR, outputName);
+
+      const payload = {
+        formName: form.name,
+        title: form.title,
+        completedAt: new Date().toISOString(),
+        sourceDocuments: [source.filename],
+        values,
+        missingRequired,
+        notes: notes ?? null,
+      };
+
+      await writeFile(outputPath, JSON.stringify(payload, null, 2), 'utf-8');
+
+      return {
+        savedTo: `completed/${outputName}`,
+        missingRequired,
+        fieldCount: nonEmptyCount,
+        values,
+        sourceDocument: source.filename,
+        sourceResolvedBy: source.resolvedBy,
+        sourceAlternatives: source.alternatives,
+      };
+    } catch (error) {
+      return {
+        error:
+          error instanceof Error ? error.message : 'Failed to fill form from source',
+      };
+    }
+  },
+});
+
 export const saveCompletedForm = tool({
   description:
     'Save a completed form with field values. Use after reading source documents to extract answers.',
@@ -102,9 +183,53 @@ export const saveCompletedForm = tool({
   execute: async ({ formName, values, sourceDocuments, notes }) => {
     try {
       const form = await loadForm(formName);
+      let resolvedValues = { ...values };
+
+      const allEmpty = Object.values(resolvedValues).every(
+        (value) => value === undefined || value === null || value === '',
+      );
+
+      if (allEmpty && sourceDocuments?.[0]) {
+        const source = await readDocumentTextByName({
+          filename: sourceDocuments[0].includes('.')
+            ? sourceDocuments[0]
+            : undefined,
+          hint: sourceDocuments[0].includes('.')
+            ? undefined
+            : sourceDocuments[0],
+          keywords: ['resume', 'cv'],
+        });
+
+        if (!('error' in source)) {
+          resolvedValues = mapJsonFormValuesFromContent(
+            form.fields,
+            source.content,
+          );
+        }
+      }
+
+      const nonEmptyCount = Object.values(resolvedValues).filter(
+        (value) => value !== undefined && value !== null && value !== '',
+      ).length;
+
+      if (nonEmptyCount === 0) {
+        return {
+          error:
+            'No form fields were filled. Use fillJsonFormFromSource instead of saving empty values.',
+          suggestion:
+            'Call fillJsonFormFromSource with formName and sourceDocument set to your resume.',
+        };
+      }
+
       const missingRequired = form.fields
-        .filter((f) => f.required && (values[f.id] === undefined || values[f.id] === null || values[f.id] === ''))
-        .map((f) => f.id);
+        .filter(
+          (field) =>
+            field.required &&
+            (resolvedValues[field.id] === undefined ||
+              resolvedValues[field.id] === null ||
+              resolvedValues[field.id] === ''),
+        )
+        .map((field) => field.id);
 
       await mkdir(COMPLETED_DIR, { recursive: true });
 
@@ -117,7 +242,7 @@ export const saveCompletedForm = tool({
         title: form.title,
         completedAt: new Date().toISOString(),
         sourceDocuments: sourceDocuments ?? [],
-        values,
+        values: resolvedValues,
         missingRequired,
         notes: notes ?? null,
       };
@@ -127,7 +252,7 @@ export const saveCompletedForm = tool({
       return {
         savedTo: `completed/${outputName}`,
         missingRequired,
-        fieldCount: Object.keys(values).length,
+        fieldCount: nonEmptyCount,
       };
     } catch (error) {
       return {
@@ -155,6 +280,7 @@ export const listCompletedForms = tool({
 export const formTools = {
   listForms,
   getForm,
+  fillJsonFormFromSource,
   saveCompletedForm,
   listCompletedForms,
 };

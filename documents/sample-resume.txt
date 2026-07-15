@@ -1,0 +1,23 @@
+Alex Rivera
+Product Designer
+alex.rivera@email.com | (415) 555-4821 | San Francisco, CA
+
+SUMMARY
+Product designer with 6+ years of experience building intuitive web and mobile experiences for SaaS products. Skilled in user research, wireframing, prototyping, and design systems.
+
+EXPERIENCE
+Senior Product Designer, Northstar Labs (2021–Present)
+- Lead end-to-end design for a B2B analytics platform used by enterprise teams.
+- Improved onboarding completion by 28% through simplified flows and clearer guidance.
+- Partnered with engineering and product to launch a reusable component library.
+
+Product Designer, Brightly Health (2018–2021)
+- Designed patient-facing dashboards and appointment management tools.
+- Ran usability tests and translated insights into prioritized improvements.
+- Helped reduce support tickets by 18% through clearer interface patterns.
+
+EDUCATION
+B.S. in Human-Computer Interaction, University of California, Davis
+
+SKILLS
+User research, wireframing, prototyping, Figma, design systems, usability testing, product strategy
