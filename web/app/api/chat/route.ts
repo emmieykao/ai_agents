@@ -3,7 +3,13 @@ import {
   createDocumentReaderAgent,
   type AgentUiContext,
 } from '@agent/agent';
-import { createAgentUIStreamResponse, type Agent } from 'ai';
+import type { ProgressEvent } from '@agent/lib/progress';
+import {
+  createAgentUIStream,
+  createUIMessageStream,
+  createUIMessageStreamResponse,
+  type Agent,
+} from 'ai';
 
 export const maxDuration = 60;
 
@@ -76,11 +82,32 @@ export async function POST(req: Request) {
     selectedFormKind,
   };
 
-  const agent = createDocumentReaderAgent(context);
-
-  return createAgentUIStreamResponse({
-    agent: agent as unknown as Agent,
-    uiMessages: messages,
+  const stream = createUIMessageStream({
     onError: toUserFacingError,
+    execute: async ({ writer }) => {
+      let seq = 0;
+      // Unique per request — a bare counter would repeat ids (progress-1, ...)
+      // across turns and cause duplicate React keys in the UI.
+      const runId = crypto.randomUUID().slice(0, 8);
+
+      const agent = createDocumentReaderAgent(context, (event: ProgressEvent) => {
+        // Each event becomes a distinct data part so the UI can list sub-steps
+        // (reading → extracting → mapping → saving) as they happen.
+        writer.write({
+          type: 'data-progress',
+          id: `progress-${runId}-${++seq}`,
+          data: event,
+        });
+      });
+
+      const agentStream = await createAgentUIStream({
+        agent: agent as unknown as Agent,
+        uiMessages: messages,
+      });
+
+      writer.merge(agentStream);
+    },
   });
+
+  return createUIMessageStreamResponse({ stream });
 }

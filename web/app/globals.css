@@ -29,3 +29,19 @@ body {
     -apple-system,
     sans-serif;
 }
+
+/* Filled-value entrance animation for the form fill replay. */
+@keyframes rise-in {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.animate-rise-in {
+  animation: rise-in 0.4s ease-out;
+}

@@ -22,6 +22,7 @@ type ChatProps = {
   selectedFormKind?: 'json' | 'pdf';
   fillTrigger?: number;
   onLoadingChange?: (isLoading: boolean) => void;
+  onMessagesChange?: (messages: UIMessage[]) => void;
 };
 
 export function Chat({
@@ -30,6 +31,7 @@ export function Chat({
   selectedFormKind,
   fillTrigger = 0,
   onLoadingChange,
+  onMessagesChange,
 }: ChatProps) {
   const contextRef = useRef({
     selectedDocument,
@@ -77,6 +79,10 @@ export function Chat({
   useEffect(() => {
     onLoadingChange?.(isLoading);
   }, [isLoading, onLoadingChange]);
+
+  useEffect(() => {
+    onMessagesChange?.(messages);
+  }, [messages, onMessagesChange]);
 
   useEffect(() => {
     if (!fillTrigger || fillTrigger === lastFillTrigger.current || !selectedForm) {

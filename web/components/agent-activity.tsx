@@ -25,6 +25,57 @@ export type AgentActivityItem = {
   output?: unknown;
 };
 
+export type ProgressStep = {
+  id: string;
+  messageId: string;
+  phase: string;
+  label: string;
+  detail?: string;
+  formName?: string;
+  fieldId?: string;
+  file?: string;
+};
+
+/** Fine-grained sub-steps streamed by tools via `data-progress` parts. */
+export function extractProgressSteps(messages: UIMessage[]): ProgressStep[] {
+  const steps: ProgressStep[] = [];
+
+  for (const message of messages) {
+    if (message.role !== 'assistant') continue;
+    for (const part of message.parts) {
+      if (part.type !== 'data-progress') continue;
+      const data = (part as { data?: Record<string, unknown> }).data ?? {};
+      steps.push({
+        // Scope to the message so keys stay unique even if part ids repeat
+        // across turns (e.g. history streamed by an older server version).
+        id: `${message.id}:${(part as { id?: string }).id ?? steps.length}`,
+        messageId: message.id,
+        phase: String(data.phase ?? ''),
+        label: String(data.label ?? ''),
+        detail: typeof data.detail === 'string' ? data.detail : undefined,
+        formName:
+          typeof data.formName === 'string' ? data.formName : undefined,
+        fieldId: typeof data.fieldId === 'string' ? data.fieldId : undefined,
+        file: typeof data.file === 'string' ? data.file : undefined,
+      });
+    }
+  }
+
+  return steps;
+}
+
+const PHASE_ICON: Record<string, string> = {
+  search: '🔎',
+  resolve: '📄',
+  read: '📖',
+  extract: '🧩',
+  map: '🔗',
+  field: '✏️',
+  skip: '⚠️',
+  save: '💾',
+  done: '✅',
+};
+
 export function extractAgentActivities(
   messages: UIMessage[],
 ): AgentActivityItem[] {
@@ -98,6 +149,11 @@ export function AgentActivityPanel({
     [messages],
   );
 
+  const progressSteps = useMemo(
+    () => extractProgressSteps(messages),
+    [messages],
+  );
+
   const latestAssistant = [...messages]
     .reverse()
     .find((message) => message.role === 'assistant');
@@ -109,9 +165,29 @@ export function AgentActivityPanel({
     .trim();
 
   const isActive = status === 'streaming' || status === 'submitted';
-  const showPanel = isActive || activities.length > 0 || Boolean(reasoning);
+  const showPanel =
+    isActive ||
+    activities.length > 0 ||
+    progressSteps.length > 0 ||
+    Boolean(reasoning);
 
   if (!showPanel) return null;
+
+  // While streaming, describe what the agent is doing during the (often long)
+  // model-generation gaps where no tool is running.
+  const runningTool = activities.some(
+    (a) => a.state === 'input-streaming' || a.state === 'input-available',
+  );
+  const assistantIsWriting = Boolean(
+    latestAssistant?.parts.some((p) => p.type === 'text'),
+  );
+  const liveLabel = runningTool
+    ? 'Running a tool…'
+    : progressSteps.length > 0 && assistantIsWriting
+      ? 'Composing the summary…'
+      : activities.length > 0
+        ? 'Consulting the AI model…'
+        : 'Consulting the AI model…';
 
   const currentStep =
     activities.length > 0 ? activities[activities.length - 1].step : 0;
@@ -147,7 +223,40 @@ export function AgentActivityPanel({
         </details>
       )}
 
-      {activities.length === 0 && isActive && (
+      {progressSteps.length > 0 && (
+        <ol className="mb-3 space-y-1.5">
+          {progressSteps.map((step, index) => {
+            const isLast = index === progressSteps.length - 1;
+            const showSpinner = isActive && isLast && step.phase !== 'done';
+            return (
+              <li key={step.id} className="flex items-start gap-2 text-sm">
+                <span className="mt-0.5 w-4 text-center">
+                  {showSpinner ? (
+                    <span className="inline-block h-3 w-3 animate-spin rounded-full border-2 border-[var(--accent)] border-t-transparent align-middle" />
+                  ) : (
+                    <span>{PHASE_ICON[step.phase] ?? '•'}</span>
+                  )}
+                </span>
+                <span className="min-w-0 flex-1">
+                  <span>{step.label}</span>
+                  {step.detail && (
+                    <span className="text-[var(--muted)]"> — {step.detail}</span>
+                  )}
+                </span>
+              </li>
+            );
+          })}
+        </ol>
+      )}
+
+      {isActive && !runningTool && (
+        <div className="mb-3 flex items-center gap-2 text-sm text-[var(--muted)]">
+          <span className="inline-block h-3 w-3 animate-pulse rounded-full bg-[var(--accent)]" />
+          <span>{liveLabel}</span>
+        </div>
+      )}
+
+      {activities.length === 0 && progressSteps.length === 0 && isActive && (
         <p className="text-sm text-[var(--muted)]">
           Preparing to read your documents...
         </p>

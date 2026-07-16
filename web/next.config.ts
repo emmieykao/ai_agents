@@ -18,6 +18,8 @@ const nextConfig: NextConfig = {
       '.js': ['.ts', '.tsx', '.js'],
       '.mjs': ['.mts', '.mjs'],
     };
+    // pdf.js optionally requires the Node "canvas" package; stub it out for the browser.
+    config.resolve.alias = { ...config.resolve.alias, canvas: false };
     return config;
   },
 };

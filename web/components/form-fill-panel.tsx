@@ -44,11 +44,6 @@ export function FormFillPanel({
       }
 
       setForms(data.forms);
-
-      if (!selectedForm && data.forms.length > 0) {
-        const first = data.forms[0] as FormEntry;
-        onSelectForm(first.name, first.kind);
-      }
     } catch (loadError) {
       setError(
         loadError instanceof Error ? loadError.message : 'Failed to load forms',
@@ -56,7 +51,7 @@ export function FormFillPanel({
     } finally {
       setIsLoadingForms(false);
     }
-  }, [onSelectForm, selectedForm]);
+  }, []);
 
   useEffect(() => {
     void loadForms();
@@ -113,6 +108,11 @@ export function FormFillPanel({
             >
               {forms.length === 0 && (
                 <option value="">No forms available</option>
+              )}
+              {forms.length > 0 && !selectedForm && (
+                <option value="" disabled>
+                  Choose a form…
+                </option>
               )}
               {forms.map((form) => (
                 <option
