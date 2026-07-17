@@ -1,0 +1,67 @@
+{
+  "name": "travel-request",
+  "title": "Travel Request",
+  "description": "Business travel authorization request. Traveler identity fills from a resume; trip details must come from the requester or an itinerary document.",
+  "fields": [
+    {
+      "id": "full_name",
+      "label": "Traveler Name",
+      "type": "text",
+      "required": true
+    },
+    {
+      "id": "email",
+      "label": "Email Address",
+      "type": "email",
+      "required": true
+    },
+    {
+      "id": "phone",
+      "label": "Phone Number",
+      "type": "phone",
+      "required": false
+    },
+    {
+      "id": "organization",
+      "label": "Department / Organization",
+      "type": "text",
+      "required": false
+    },
+    {
+      "id": "job_title",
+      "label": "Job Title",
+      "type": "text",
+      "required": false
+    },
+    {
+      "id": "destination",
+      "label": "Destination",
+      "type": "text",
+      "required": true
+    },
+    {
+      "id": "departure_date",
+      "label": "Departure Date",
+      "type": "date",
+      "required": true
+    },
+    {
+      "id": "return_date",
+      "label": "Return Date",
+      "type": "date",
+      "required": true
+    },
+    {
+      "id": "purpose",
+      "label": "Purpose of Trip",
+      "type": "textarea",
+      "required": true
+    },
+    {
+      "id": "estimated_cost",
+      "label": "Estimated Total Cost",
+      "type": "number",
+      "required": false
+    }
+  ]
+}

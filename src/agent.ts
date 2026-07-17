@@ -3,6 +3,7 @@ import { ToolLoopAgent } from 'ai';
 import { documentTools } from './tools/document-tools.js';
 import { formTools } from './tools/form-tools.js';
 import { pdfFormTools } from './tools/pdf-form-tools.js';
+import type { ProgressReporter } from './lib/progress.js';
 
 export type AgentUiContext = {
   selectedDocument?: string;
@@ -50,11 +51,18 @@ CRITICAL — never invent facts: When you state a document name or field value, 
 4. Read the source document(s) only if you need extra context beyond auto-mapping.
 5. Report missing fields (from the tool's "missingRequired") instead of guessing.
 
+## Updating a completed form (important)
+When the user provides additional or corrected details AFTER a form was filled (e.g. "the destination is Tokyo", "my SSN is …", "departing Aug 1"):
+- Call updateCompletedForm (JSON forms) or updateCompletedPdfForm (PDF forms) with ONLY the new/changed values — do NOT refill from the source document.
+- Keys are field ids (JSON) or PDF field names; close label matches are resolved automatically. If unsure, check getForm / getPdfFormFields.
+- Convert what the user says into the right fields (e.g. "leaving August 1st" → departure_date: "2026-08-01").
+- The update merges into the previous answers and saves a new version. Report which fields changed and any still-missing required fields.
+
 ## JSON forms
-- listForms, getForm, fillJsonFormFromSource, saveCompletedForm
+- listForms, getForm, fillJsonFormFromSource, saveCompletedForm, updateCompletedForm
 
 ## PDF forms
-- listPdfForms, getPdfFormFields, fillPdfFormFromSource, fillPdfForm
+- listPdfForms, getPdfFormFields, fillPdfFormFromSource, fillPdfForm, updateCompletedPdfForm
 - Uploaded PDFs with fillable fields (like "Standard Application.pdf") are available as PDF forms automatically — use listPdfForms to see them.
 - Partial names work: "application" matches "Standard Application".
 - When filling an application PDF, read the resume/CV as the source document and fill the application form separately.
@@ -93,7 +101,10 @@ Be accurate. Do not invent information.`,
   return lines.join('\n');
 }
 
-export function createDocumentReaderAgent(context?: AgentUiContext) {
+export function createDocumentReaderAgent(
+  context?: AgentUiContext,
+  onProgress?: ProgressReporter,
+) {
   return new ToolLoopAgent({
     model,
     providerOptions: {
@@ -102,6 +113,9 @@ export function createDocumentReaderAgent(context?: AgentUiContext) {
       } satisfies GatewayProviderOptions,
     },
     instructions: buildAgentInstructions(context),
+    // Forwarded to every tool's execute() as experimental_context so tools can
+    // stream fine-grained progress (reading, mapping, saving) to the UI.
+    experimental_context: { onProgress },
     tools: {
       ...documentTools,
       ...formTools,

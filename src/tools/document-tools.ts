@@ -10,6 +10,7 @@ import {
   resolveDocumentName,
 } from '../lib/documents.js';
 import { extractContactHints } from '../lib/contact-extract.js';
+import { reportProgress } from '../lib/progress.js';
 import { DOCUMENTS_DIR } from '../paths.js';
 
 export { DOCUMENTS_DIR };
@@ -66,9 +67,20 @@ export const findDocument = tool({
       .string()
       .describe('Partial filename or keyword, e.g. "resume" or "lecture notes"'),
   }),
-  execute: async ({ query }) => {
+  execute: async ({ query }, options) => {
+    reportProgress(options?.experimental_context, {
+      phase: 'search',
+      label: `Looking for a document matching "${query}"`,
+    });
     const files = await listDocumentFiles();
     const matches = matchDocumentFiles(files, query);
+
+    reportProgress(options?.experimental_context, {
+      phase: 'resolve',
+      label: matches[0]
+        ? `Best match: ${matches[0].name}`
+        : `No document matched "${query}"`,
+    });
 
     return {
       query,
@@ -102,7 +114,12 @@ export const readDocument = tool({
         'When filling contact forms, prefer resume/CV documents and return extracted contact hints',
       ),
   }),
-  execute: async ({ filename, hint, useLatest, forContactInfo }) => {
+  execute: async ({ filename, hint, useLatest, forContactInfo }, options) => {
+    const ctx = options?.experimental_context;
+    reportProgress(ctx, {
+      phase: 'resolve',
+      label: `Finding document (${filename ?? hint ?? (useLatest ? 'latest upload' : 'resume')})`,
+    });
     const resolved = await resolveDocumentName({
       filename,
       hint: forContactInfo && !filename && !hint ? 'resume' : hint,
@@ -124,6 +141,11 @@ export const readDocument = tool({
     }
 
     try {
+      reportProgress(ctx, {
+        phase: 'read',
+        label: `Reading ${resolved.filename}`,
+        detail: resolved.resolvedBy,
+      });
       const content = await readDocumentContent(filePath);
       const truncated = content.length > 12_000;
       const contactHints = extractContactHints(content);

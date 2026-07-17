@@ -1,0 +1,64 @@
+{
+  "name": "tax-info",
+  "title": "Taxpayer Information (W-9 style)",
+  "description": "Basic taxpayer identification details, W-9 style. Identity fields can be filled from a resume; tax identifiers must be provided by the person.",
+  "fields": [
+    {
+      "id": "full_name",
+      "label": "Full Name",
+      "type": "text",
+      "required": true,
+      "description": "Name as shown on your income tax return"
+    },
+    {
+      "id": "business_name",
+      "label": "Business Name / Disregarded Entity",
+      "type": "text",
+      "required": false
+    },
+    {
+      "id": "tax_classification",
+      "label": "Federal Tax Classification",
+      "type": "text",
+      "required": false,
+      "description": "e.g. Individual/sole proprietor, C corporation, S corporation, Partnership"
+    },
+    {
+      "id": "ssn_or_ein",
+      "label": "SSN or EIN",
+      "type": "text",
+      "required": true,
+      "description": "Social Security Number or Employer Identification Number"
+    },
+    {
+      "id": "address",
+      "label": "Address",
+      "type": "text",
+      "required": true
+    },
+    {
+      "id": "city",
+      "label": "City",
+      "type": "text",
+      "required": false
+    },
+    {
+      "id": "state",
+      "label": "State",
+      "type": "text",
+      "required": false
+    },
+    {
+      "id": "zip",
+      "label": "ZIP Code",
+      "type": "text",
+      "required": false
+    },
+    {
+      "id": "email",
+      "label": "Email Address",
+      "type": "email",
+      "required": false
+    }
+  ]
+}

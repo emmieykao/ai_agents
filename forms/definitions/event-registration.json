@@ -1,0 +1,56 @@
+{
+  "name": "event-registration",
+  "title": "Event Registration",
+  "description": "Conference/event registration. Attendee identity and affiliation fill from a resume.",
+  "fields": [
+    {
+      "id": "full_name",
+      "label": "Attendee Name",
+      "type": "text",
+      "required": true
+    },
+    {
+      "id": "email",
+      "label": "Email Address",
+      "type": "email",
+      "required": true
+    },
+    {
+      "id": "phone",
+      "label": "Phone Number",
+      "type": "phone",
+      "required": false
+    },
+    {
+      "id": "organization",
+      "label": "Organization / Affiliation",
+      "type": "text",
+      "required": false
+    },
+    {
+      "id": "job_title",
+      "label": "Job Title / Role",
+      "type": "text",
+      "required": false
+    },
+    {
+      "id": "dietary_restrictions",
+      "label": "Dietary Restrictions",
+      "type": "text",
+      "required": false
+    },
+    {
+      "id": "accessibility_needs",
+      "label": "Accessibility Needs",
+      "type": "text",
+      "required": false
+    },
+    {
+      "id": "session_interests",
+      "label": "Sessions of Interest",
+      "type": "textarea",
+      "required": false,
+      "description": "Which talks or tracks are you most interested in?"
+    }
+  ]
+}

@@ -1,0 +1,67 @@
+{
+  "name": "medical-intake",
+  "title": "Patient Intake",
+  "description": "New-patient intake record. Contact details fill from a document; medical history must be provided by the patient.",
+  "fields": [
+    {
+      "id": "full_name",
+      "label": "Patient Name",
+      "type": "text",
+      "required": true
+    },
+    {
+      "id": "date_of_birth",
+      "label": "Date of Birth",
+      "type": "date",
+      "required": true
+    },
+    {
+      "id": "email",
+      "label": "Email Address",
+      "type": "email",
+      "required": false
+    },
+    {
+      "id": "phone",
+      "label": "Phone Number",
+      "type": "phone",
+      "required": true
+    },
+    {
+      "id": "address",
+      "label": "Home Address",
+      "type": "text",
+      "required": false
+    },
+    {
+      "id": "emergency_contact_name",
+      "label": "Emergency Contact Name",
+      "type": "text",
+      "required": false
+    },
+    {
+      "id": "emergency_contact_phone",
+      "label": "Emergency Contact Phone",
+      "type": "phone",
+      "required": false
+    },
+    {
+      "id": "insurance_provider",
+      "label": "Insurance Provider",
+      "type": "text",
+      "required": false
+    },
+    {
+      "id": "current_medications",
+      "label": "Current Medications",
+      "type": "textarea",
+      "required": false
+    },
+    {
+      "id": "allergies",
+      "label": "Allergies",
+      "type": "textarea",
+      "required": false
+    }
+  ]
+}

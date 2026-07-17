@@ -1,0 +1,68 @@
+{
+  "name": "rental-application",
+  "title": "Rental Application",
+  "description": "Apartment/housing rental application. Identity and employment fill from a resume; income and move-in details must be provided by the applicant.",
+  "fields": [
+    {
+      "id": "full_name",
+      "label": "Full Name",
+      "type": "text",
+      "required": true
+    },
+    {
+      "id": "email",
+      "label": "Email Address",
+      "type": "email",
+      "required": true
+    },
+    {
+      "id": "phone",
+      "label": "Phone Number",
+      "type": "phone",
+      "required": true
+    },
+    {
+      "id": "address",
+      "label": "Current Address",
+      "type": "text",
+      "required": false
+    },
+    {
+      "id": "employer",
+      "label": "Current Employer",
+      "type": "text",
+      "required": false
+    },
+    {
+      "id": "job_title",
+      "label": "Occupation / Job Title",
+      "type": "text",
+      "required": false
+    },
+    {
+      "id": "years_experience",
+      "label": "Years at Current Job",
+      "type": "text",
+      "required": false
+    },
+    {
+      "id": "monthly_income",
+      "label": "Gross Monthly Income",
+      "type": "number",
+      "required": false
+    },
+    {
+      "id": "move_in_date",
+      "label": "Desired Move-in Date",
+      "type": "date",
+      "required": false
+    },
+    {
+      "id": "pets",
+      "label": "Pets",
+      "type": "text",
+      "required": false,
+      "description": "Type and number of pets, if any"
+    }
+  ]
+}
