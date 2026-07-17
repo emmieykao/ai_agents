@@ -60,40 +60,38 @@ export function FormFillPanel({
   const canFill = Boolean(selectedForm) && !isLoading;
 
   return (
-    <section className="rounded-lg border border-[var(--border)] bg-[var(--card)] p-4">
-      <h2 className="text-sm font-semibold">Fill a form</h2>
-      <p className="mt-1 text-xs text-[var(--muted)]">
-        Pick a form template. The agent reads your document — no exact filename
-        needed.
-      </p>
+    <section className="shrink-0 space-y-3 p-4">
+      <h2 className="eyebrow">Fill a form</h2>
 
-      <div className="mt-4 space-y-3">
-        <div>
-          <label className="text-xs font-medium uppercase tracking-wide text-[var(--muted)]">
-            Source document
-          </label>
-          <p className="mt-1 truncate text-sm">
-            {selectedDocument ?? (
-              <span className="text-[var(--muted)]">
-                Latest upload (auto-selected)
-              </span>
-            )}
+      <div>
+        <p className="font-mono text-[9.5px] uppercase tracking-[0.14em] text-ink-faint">
+          Source
+        </p>
+        <p className="mt-0.5 truncate text-[13px]">
+          {selectedDocument ?? (
+            <span className="font-display italic text-ink-faint">
+              latest upload, chosen for you
+            </span>
+          )}
+        </p>
+      </div>
+
+      <div>
+        <label
+          htmlFor="form-select"
+          className="font-mono text-[9.5px] uppercase tracking-[0.14em] text-ink-faint"
+        >
+          Form
+        </label>
+        {isLoadingForms ? (
+          <p className="mt-0.5 font-display text-[13px] italic text-ink-faint">
+            Fetching forms…
           </p>
-        </div>
-
-        <div>
-          <label
-            htmlFor="form-select"
-            className="text-xs font-medium uppercase tracking-wide text-[var(--muted)]"
-          >
-            Form template
-          </label>
-          {isLoadingForms ? (
-            <p className="mt-1 text-sm text-[var(--muted)]">Loading forms...</p>
-          ) : (
+        ) : (
+          <div className="relative mt-1">
             <select
               id="form-select"
-              className="mt-1 w-full rounded-lg border border-[var(--border)] bg-[var(--background)] px-3 py-2 text-sm outline-none focus:border-[var(--accent)]"
+              className="w-full appearance-none rounded-md border border-line bg-sheet-tint px-3 py-2 pr-8 text-[13px] outline-none transition-colors focus:border-pen"
               value={
                 selectedForm
                   ? `${selectedFormKind ?? 'json'}:${selectedForm}`
@@ -123,22 +121,32 @@ export function FormFillPanel({
                 </option>
               ))}
             </select>
-          )}
-        </div>
-
-        {error && (
-          <p className="text-xs text-red-600 dark:text-red-400">{error}</p>
+            <svg
+              viewBox="0 0 16 16"
+              aria-hidden
+              className="pointer-events-none absolute right-2.5 top-1/2 h-3 w-3 -translate-y-1/2 text-ink-faint"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="1.4"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <path d="M4 6.5 8 10.5l4-4" />
+            </svg>
+          </div>
         )}
-
-        <button
-          type="button"
-          disabled={!canFill || forms.length === 0}
-          onClick={onFillForm}
-          className="w-full rounded-lg bg-[var(--accent)] px-4 py-2.5 text-sm font-medium text-white disabled:opacity-50"
-        >
-          {isLoading ? 'Filling form...' : 'Fill form from document'}
-        </button>
       </div>
+
+      {error && <p className="text-[12px] text-seal">{error}</p>}
+
+      <button
+        type="button"
+        disabled={!canFill || forms.length === 0}
+        onClick={onFillForm}
+        className="btn-ink w-full"
+      >
+        {isLoading ? 'Writing…' : 'Fill from document'}
+      </button>
     </section>
   );
 }

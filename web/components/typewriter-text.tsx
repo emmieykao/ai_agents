@@ -31,7 +31,9 @@ export function TypewriterText({
   return (
     <span>
       {text.slice(0, count)}
-      <span className="animate-pulse text-[var(--accent)]">▍</span>
+      <span className="ink-pulse text-pen" aria-hidden>
+        ▏
+      </span>
     </span>
   );
 }

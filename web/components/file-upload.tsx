@@ -1,6 +1,7 @@
 'use client';
 
 import { useCallback, useState } from 'react';
+import { Glyph } from './icons';
 
 const ACCEPTED_TYPES = '.txt,.md,.pdf';
 
@@ -39,9 +40,9 @@ export function FileUpload({ onUploaded }: FileUploadProps) {
         }
 
         const fillableNote = data.fillableForm
-          ? ` · ${data.fillableForm.fieldCount} fillable fields detected`
+          ? ` · ${data.fillableForm.fieldCount} fillable fields found`
           : '';
-        setSuccess(`Uploaded ${data.document.name}${fillableNote}`);
+        setSuccess(`Added ${data.document.name}${fillableNote}`);
         onUploaded({
           document: data.document,
           fillableForm: data.fillableForm ?? null,
@@ -68,12 +69,12 @@ export function FileUpload({ onUploaded }: FileUploadProps) {
   );
 
   return (
-    <div className="space-y-2">
+    <div className="space-y-1.5">
       <label
-        className={`flex cursor-pointer flex-col items-center justify-center rounded-lg border-2 border-dashed px-4 py-6 text-center transition-colors ${
+        className={`flex cursor-pointer flex-col items-center justify-center gap-1 rounded-md border border-dashed px-4 py-5 text-center transition-colors ${
           isDragging
-            ? 'border-[var(--accent)] bg-blue-50/50 dark:bg-blue-950/20'
-            : 'border-[var(--border)] bg-[var(--card)] hover:border-[var(--accent)]'
+            ? 'border-pen bg-pen-wash'
+            : 'border-line-strong hover:border-pen'
         } ${isUploading ? 'pointer-events-none opacity-60' : ''}`}
         onDragEnter={(event) => {
           event.preventDefault();
@@ -97,20 +98,20 @@ export function FileUpload({ onUploaded }: FileUploadProps) {
           disabled={isUploading}
           onChange={(event) => handleFiles(event.target.files)}
         />
-        <p className="text-sm font-medium">
-          {isUploading ? 'Uploading...' : 'Drop a file here'}
+        <Glyph
+          name="arrow-up"
+          className={`h-3.5 w-3.5 ${isDragging ? 'text-pen' : 'text-ink-faint'}`}
+        />
+        <p className="text-[13px] font-medium">
+          {isUploading ? 'Adding…' : 'Drop a document'}
         </p>
-        <p className="mt-1 text-xs text-[var(--muted)]">
-          or click to browse · .txt, .md, .pdf · max 10 MB
+        <p className="font-mono text-[10px] text-ink-faint">
+          or click to browse · .txt .md .pdf · 10 MB
         </p>
       </label>
 
-      {error && (
-        <p className="text-xs text-red-600 dark:text-red-400">{error}</p>
-      )}
-      {success && (
-        <p className="text-xs text-green-600 dark:text-green-400">{success}</p>
-      )}
+      {error && <p className="text-[12px] text-seal">{error}</p>}
+      {success && <p className="font-mono text-[11px] text-pen">{success}</p>}
     </div>
   );
 }

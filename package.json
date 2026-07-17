@@ -12,7 +12,10 @@
     "typecheck": "tsc --noEmit",
     "typecheck:web": "npm run typecheck --prefix web",
     "create-sample-pdf": "tsx scripts/create-sample-pdf-form.ts",
-    "create-sample-document-pdf": "tsx scripts/create-sample-document-pdf.ts"
+    "create-sample-document-pdf": "tsx scripts/create-sample-document-pdf.ts",
+    "create-form-pdfs": "tsx scripts/create-form-pdfs.ts",
+    "start:web": "npm run start --prefix web",
+    "test:web": "npm run test --prefix web"
   },
   "engines": {
     "node": ">=18"

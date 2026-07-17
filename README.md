@@ -78,14 +78,22 @@ Requires **Node.js 18+**.
    npm start
    ```
 
-   Web UI (Phase 1–2):
+   Web UI (Inkwell):
    ```bash
    cd web
    cp .env.local.example .env.local   # or copy keys from ../.env
    npm run dev
    ```
 
-   Open [http://localhost:3000](http://localhost:3000). Upload `.txt`, `.md`, or `.pdf` files in the sidebar, then chat about them.
+   Open [http://localhost:3000](http://localhost:3000). Upload `.txt`, `.md`, or `.pdf` files in the sidebar, pick a form, and watch the agent write it — or just chat. The UI's visual language is documented in [web/DESIGN.md](web/DESIGN.md); UI smoke tests run with `npm test` from `web/`.
+
+   Production build (run these from `web/`, not the repo root — the root's `npm start` launches the CLI agent instead):
+   ```bash
+   cd web
+   npm run build
+   npm start
+   ```
+   Or from the repo root: `npm run build:web && npm run start:web`.
 
 ## Project structure
 

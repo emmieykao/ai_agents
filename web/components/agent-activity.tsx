@@ -11,6 +11,7 @@ import {
   getToolStateLabel,
   summarizeToolOutput,
 } from '@/lib/tool-labels';
+import { Glyph, Working, type GlyphName } from './icons';
 
 export type AgentActivityItem = {
   id: string;
@@ -64,16 +65,22 @@ export function extractProgressSteps(messages: UIMessage[]): ProgressStep[] {
   return steps;
 }
 
-const PHASE_ICON: Record<string, string> = {
-  search: '🔎',
-  resolve: '📄',
-  read: '📖',
-  extract: '🧩',
-  map: '🔗',
-  field: '✏️',
-  skip: '⚠️',
-  save: '💾',
-  done: '✅',
+const PHASE_GLYPH: Record<string, GlyphName> = {
+  search: 'search',
+  resolve: 'page',
+  read: 'book',
+  extract: 'funnel',
+  map: 'link',
+  field: 'pen',
+  skip: 'alert',
+  save: 'save',
+  done: 'check',
+};
+
+const PHASE_COLOR: Record<string, string> = {
+  field: 'text-pen',
+  skip: 'text-amber',
+  done: 'text-seal',
 };
 
 export function extractAgentActivities(
@@ -120,17 +127,15 @@ export function extractAgentActivities(
 
 function StateIcon({ state }: { state: string }) {
   if (state === 'output-available') {
-    return <span className="text-green-600 dark:text-green-400">✓</span>;
+    return <Glyph name="check" className="h-3 w-3 text-pen" />;
   }
   if (state === 'output-error') {
-    return <span className="text-red-600 dark:text-red-400">✕</span>;
+    return <Glyph name="cross" className="h-3 w-3 text-seal" />;
   }
   if (state === 'input-streaming' || state === 'input-available') {
-    return (
-      <span className="inline-block h-3 w-3 animate-spin rounded-full border-2 border-[var(--accent)] border-t-transparent" />
-    );
+    return <Working className="h-3 w-3 text-pen" />;
   }
-  return <span className="text-[var(--muted)]">○</span>;
+  return <Glyph name="dot" className="h-3 w-3 text-ink-faint" />;
 }
 
 type AgentActivityPanelProps = {
@@ -185,39 +190,30 @@ export function AgentActivityPanel({
     ? 'Running a tool…'
     : progressSteps.length > 0 && assistantIsWriting
       ? 'Composing the summary…'
-      : activities.length > 0
-        ? 'Consulting the AI model…'
-        : 'Consulting the AI model…';
-
-  const currentStep =
-    activities.length > 0 ? activities[activities.length - 1].step : 0;
+      : 'Consulting the model…';
 
   return (
-    <div className="mb-4 rounded-lg border border-[var(--border)] bg-[var(--card)] p-4">
+    <div className="rounded-lg border border-line bg-sheet-tint/70 p-4">
       <div className="mb-3 flex items-center justify-between gap-2">
-        <div>
-          <h3 className="text-sm font-semibold">Agent activity</h3>
-          <p className="text-xs text-[var(--muted)]">
-            {isActive
-              ? currentStep > 0
-                ? `Working — step ${currentStep}`
-                : 'Thinking...'
-              : 'Last run'}
-          </p>
-        </div>
-        {isActive && (
-          <span className="rounded-full bg-blue-100 px-2 py-1 text-xs font-medium text-blue-800 dark:bg-blue-950 dark:text-blue-200">
-            Live
+        <h3 className="eyebrow">Agent&apos;s desk</h3>
+        {isActive ? (
+          <span className="flex items-center gap-1.5 font-mono text-[10px] uppercase tracking-[0.12em] text-pen">
+            <span className="ink-pulse inline-block h-1.5 w-1.5 rounded-full bg-pen" />
+            live
+          </span>
+        ) : (
+          <span className="font-mono text-[10px] uppercase tracking-[0.12em] text-ink-faint">
+            last run
           </span>
         )}
       </div>
 
       {reasoning && (
-        <details className="mb-3 rounded-md border border-[var(--border)] p-3">
-          <summary className="cursor-pointer text-xs font-medium text-[var(--muted)]">
-            Reasoning
+        <details className="mb-3 rounded-md border border-line bg-sheet p-2.5">
+          <summary className="cursor-pointer font-mono text-[10.5px] uppercase tracking-[0.12em] text-ink-soft">
+            reasoning
           </summary>
-          <pre className="mt-2 whitespace-pre-wrap text-xs text-[var(--muted)]">
+          <pre className="mt-2 whitespace-pre-wrap font-mono text-[10.5px] leading-relaxed text-ink-soft">
             {reasoning}
           </pre>
         </details>
@@ -229,18 +225,24 @@ export function AgentActivityPanel({
             const isLast = index === progressSteps.length - 1;
             const showSpinner = isActive && isLast && step.phase !== 'done';
             return (
-              <li key={step.id} className="flex items-start gap-2 text-sm">
-                <span className="mt-0.5 w-4 text-center">
+              <li key={step.id} className="flex items-start gap-2.5 text-[12.5px]">
+                <span className="mt-[3px] w-3.5 shrink-0">
                   {showSpinner ? (
-                    <span className="inline-block h-3 w-3 animate-spin rounded-full border-2 border-[var(--accent)] border-t-transparent align-middle" />
+                    <Working className="h-3 w-3 text-pen" />
                   ) : (
-                    <span>{PHASE_ICON[step.phase] ?? '•'}</span>
+                    <Glyph
+                      name={PHASE_GLYPH[step.phase] ?? 'dot'}
+                      className={`h-3.5 w-3.5 ${PHASE_COLOR[step.phase] ?? 'text-ink-faint'}`}
+                    />
                   )}
                 </span>
-                <span className="min-w-0 flex-1">
+                <span className="min-w-0 flex-1 leading-snug">
                   <span>{step.label}</span>
                   {step.detail && (
-                    <span className="text-[var(--muted)]"> — {step.detail}</span>
+                    <span className="font-mono text-[11px] text-ink-faint">
+                      {' '}
+                      — {step.detail}
+                    </span>
                   )}
                 </span>
               </li>
@@ -250,95 +252,99 @@ export function AgentActivityPanel({
       )}
 
       {isActive && !runningTool && (
-        <div className="mb-3 flex items-center gap-2 text-sm text-[var(--muted)]">
-          <span className="inline-block h-3 w-3 animate-pulse rounded-full bg-[var(--accent)]" />
-          <span>{liveLabel}</span>
+        <div className="mb-3 flex items-center gap-2 text-[12.5px] text-ink-soft">
+          <span className="ink-pulse inline-block h-1.5 w-1.5 rounded-full bg-pen" />
+          <span className="font-display italic">{liveLabel}</span>
         </div>
       )}
 
       {activities.length === 0 && progressSteps.length === 0 && isActive && (
-        <p className="text-sm text-[var(--muted)]">
-          Preparing to read your documents...
+        <p className="font-display text-[13px] italic text-ink-soft">
+          Opening your documents…
         </p>
       )}
 
-      <ol className="space-y-2">
-        {activities.map((activity) => {
-          const isExpanded = expandedId === activity.id;
-          const hasDetails =
-            activity.output !== undefined || activity.input !== undefined;
+      {activities.length > 0 && (
+        <ol>
+          {activities.map((activity, index) => {
+            const isExpanded = expandedId === activity.id;
+            const hasDetails =
+              activity.output !== undefined || activity.input !== undefined;
 
-          return (
-            <li
-              key={activity.id}
-              className="rounded-md border border-[var(--border)] p-3"
-            >
-              <div className="flex items-start gap-3">
-                <div className="mt-0.5">
-                  <StateIcon state={activity.state} />
-                </div>
-                <div className="min-w-0 flex-1">
-                  <div className="flex flex-wrap items-center gap-2">
-                    <p className="text-sm font-medium">{activity.label}</p>
-                    <span className="rounded bg-[var(--background)] px-2 py-0.5 text-[10px] uppercase tracking-wide text-[var(--muted)]">
-                      {activity.stateLabel}
-                    </span>
+            return (
+              <li
+                key={activity.id}
+                className={`py-2 ${index > 0 ? 'border-t border-line' : ''}`}
+              >
+                <div className="flex items-start gap-2.5">
+                  <div className="mt-[3px] shrink-0">
+                    <StateIcon state={activity.state} />
                   </div>
-
-                  {activity.outputSummary && (
-                    <p className="mt-1 text-xs text-[var(--muted)]">
-                      {activity.outputSummary}
-                    </p>
-                  )}
-
-                  {activity.errorText && (
-                    <p className="mt-1 text-xs text-red-600 dark:text-red-400">
-                      {activity.errorText}
-                    </p>
-                  )}
-
-                  {hasDetails && (
-                    <button
-                      type="button"
-                      onClick={() =>
-                        setExpandedId(isExpanded ? null : activity.id)
-                      }
-                      className="mt-2 text-xs text-[var(--accent)] hover:underline"
-                    >
-                      {isExpanded ? 'Hide details' : 'Show details'}
-                    </button>
-                  )}
-
-                  {isExpanded && hasDetails && (
-                    <div className="mt-2 space-y-2">
-                      {activity.input !== undefined && (
-                        <div>
-                          <p className="text-[10px] font-medium uppercase tracking-wide text-[var(--muted)]">
-                            Input
-                          </p>
-                          <pre className="mt-1 overflow-x-auto rounded bg-[var(--background)] p-2 text-[11px] text-[var(--muted)]">
-                            {JSON.stringify(activity.input, null, 2)}
-                          </pre>
-                        </div>
-                      )}
-                      {activity.output !== undefined && (
-                        <div>
-                          <p className="text-[10px] font-medium uppercase tracking-wide text-[var(--muted)]">
-                            Output
-                          </p>
-                          <pre className="mt-1 max-h-48 overflow-auto rounded bg-[var(--background)] p-2 text-[11px] text-[var(--muted)]">
-                            {JSON.stringify(activity.output, null, 2)}
-                          </pre>
-                        </div>
-                      )}
+                  <div className="min-w-0 flex-1">
+                    <div className="flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
+                      <p className="text-[12.5px] font-medium leading-snug">
+                        {activity.label}
+                      </p>
+                      <span className="font-mono text-[9px] uppercase tracking-[0.14em] text-ink-faint">
+                        {activity.stateLabel}
+                      </span>
                     </div>
-                  )}
+
+                    {activity.outputSummary && (
+                      <p className="mt-0.5 text-[11.5px] leading-snug text-ink-soft">
+                        {activity.outputSummary}
+                      </p>
+                    )}
+
+                    {activity.errorText && (
+                      <p className="mt-0.5 text-[11.5px] text-seal">
+                        {activity.errorText}
+                      </p>
+                    )}
+
+                    {hasDetails && (
+                      <button
+                        type="button"
+                        onClick={() =>
+                          setExpandedId(isExpanded ? null : activity.id)
+                        }
+                        className="btn-quiet mt-1"
+                      >
+                        {isExpanded ? 'hide details' : 'details'}
+                      </button>
+                    )}
+
+                    {isExpanded && hasDetails && (
+                      <div className="mt-2 space-y-2">
+                        {activity.input !== undefined && (
+                          <div>
+                            <p className="font-mono text-[9px] uppercase tracking-[0.14em] text-ink-faint">
+                              Input
+                            </p>
+                            <pre className="mt-1 overflow-x-auto rounded-md border border-line bg-sheet p-2 font-mono text-[10.5px] leading-relaxed text-ink-soft">
+                              {JSON.stringify(activity.input, null, 2)}
+                            </pre>
+                          </div>
+                        )}
+                        {activity.output !== undefined && (
+                          <div>
+                            <p className="font-mono text-[9px] uppercase tracking-[0.14em] text-ink-faint">
+                              Output
+                            </p>
+                            <pre className="mt-1 max-h-48 overflow-auto rounded-md border border-line bg-sheet p-2 font-mono text-[10.5px] leading-relaxed text-ink-soft">
+                              {JSON.stringify(activity.output, null, 2)}
+                            </pre>
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
                 </div>
-              </div>
-            </li>
-          );
-        })}
-      </ol>
+              </li>
+            );
+          })}
+        </ol>
+      )}
     </div>
   );
 }

@@ -6,6 +6,7 @@ import {
   extractProgressSteps,
   type ProgressStep,
 } from './agent-activity';
+import { Glyph, Working } from './icons';
 import { PdfCanvasView, type PdfLayout } from './pdf-canvas-view';
 import { TypewriterText } from './typewriter-text';
 
@@ -41,6 +42,18 @@ type AnimStyle = 'typewriter' | 'fade' | 'instant';
 const ANIM_STYLE_KEY = 'form-agent:anim-style';
 const ANIM_SPEED_KEY = 'form-agent:anim-speed';
 
+const ANIM_STYLES: Array<{ value: AnimStyle; label: string }> = [
+  { value: 'typewriter', label: 'type' },
+  { value: 'fade', label: 'fade' },
+  { value: 'instant', label: 'instant' },
+];
+
+const SPEEDS: Array<{ value: number; label: string }> = [
+  { value: 0.5, label: '½×' },
+  { value: 1, label: '1×' },
+  { value: 2, label: '2×' },
+];
+
 function normalizeName(value: string): string {
   return value.toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
 }
@@ -50,6 +63,126 @@ function namesRoughlyMatch(a?: string, b?: string): boolean {
   const na = normalizeName(a);
   const nb = normalizeName(b);
   return na === nb || na.includes(nb) || nb.includes(na);
+}
+
+function prettifyName(name: string): string {
+  return name.replace(/[-_]+/g, ' ');
+}
+
+/** Segmented text control used for the animation style and speed pickers. */
+function Segmented<T extends string | number>({
+  options,
+  value,
+  onChange,
+  title,
+}: {
+  options: Array<{ value: T; label: string }>;
+  value: T;
+  onChange: (value: T) => void;
+  title: string;
+}) {
+  return (
+    <div
+      role="group"
+      aria-label={title}
+      title={title}
+      className="flex overflow-hidden rounded-md border border-line"
+    >
+      {options.map((option) => {
+        const isActive = option.value === value;
+        return (
+          <button
+            key={String(option.value)}
+            type="button"
+            aria-pressed={isActive}
+            onClick={() => onChange(option.value)}
+            className={`px-2 py-1 font-mono text-[10px] transition-colors ${
+              isActive
+                ? 'bg-ink text-sheet'
+                : 'text-ink-soft hover:bg-sheet-tint'
+            }`}
+          >
+            {option.label}
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
+/** The cinnabar seal pressed onto the sheet when a form is filed. */
+function FiledSeal({
+  fieldCount,
+  href,
+}: {
+  fieldCount: number;
+  href: string;
+}) {
+  return (
+    <a
+      href={href}
+      target="_blank"
+      rel="noreferrer"
+      title="Open the completed file"
+      className="stamp-in seal-stamp absolute right-5 top-5 z-20 block h-[88px] w-[88px] text-seal transition-transform hover:scale-[1.03]"
+    >
+      <svg viewBox="0 0 104 104" className="h-full w-full" aria-hidden>
+        <circle
+          cx="52"
+          cy="52"
+          r="49"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2.5"
+          opacity="0.9"
+        />
+        <circle
+          cx="52"
+          cy="52"
+          r="36.5"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="1.25"
+          opacity="0.9"
+        />
+        <defs>
+          <path id="seal-arc" d="M52 9.5a42.5 42.5 0 1 1-0.01 0" fill="none" />
+        </defs>
+        <text
+          fontSize="10"
+          letterSpacing="3.4"
+          fill="currentColor"
+          fontFamily="var(--font-plex-mono), ui-monospace, monospace"
+          opacity="0.95"
+        >
+          <textPath href="#seal-arc">FILED · INKWELL · FILED ·</textPath>
+        </text>
+        <text
+          x="52"
+          y="52"
+          textAnchor="middle"
+          fontSize="21"
+          fontWeight="600"
+          fill="currentColor"
+          fontFamily="var(--font-plex-mono), ui-monospace, monospace"
+        >
+          {fieldCount}
+        </text>
+        <text
+          x="52"
+          y="65"
+          textAnchor="middle"
+          fontSize="7.5"
+          letterSpacing="2.6"
+          fill="currentColor"
+          fontFamily="var(--font-plex-mono), ui-monospace, monospace"
+        >
+          FIELDS
+        </text>
+      </svg>
+      <span className="sr-only">Form filed — open the completed file</span>
+    </a>
+  );
 }
 
 export function FormViewerPanel({
@@ -215,119 +348,135 @@ export function FormViewerPanel({
 
   // ---- status line ----
   const status = !selectedForm
-    ? 'Pick a form to get started'
+    ? 'pick a form to begin'
     : isFilling
-      ? `Filling ${currentField?.label.replace(/^Filling /, '') ?? '…'}`
+      ? `writing — ${currentField?.label.replace(/^Filling /, '') ?? '…'}`
       : completedFile
-        ? 'Completed'
-        : 'Blank template';
+        ? 'filed'
+        : 'blank';
 
   return (
-    <section className="flex min-h-[480px] flex-1 flex-col overflow-hidden rounded-lg border border-[var(--border)] bg-[var(--card)] lg:sticky lg:top-4 lg:max-h-[calc(100vh-2rem)]">
-      <header className="flex items-center justify-between gap-2 border-b border-[var(--border)] px-4 py-3">
+    <section className="sheet enter flex min-h-[480px] flex-1 flex-col overflow-hidden lg:min-h-0" style={{ animationDelay: '120ms' }}>
+      <header className="flex shrink-0 flex-wrap items-center justify-between gap-x-3 gap-y-2 border-b border-line px-5 py-3">
         <div className="min-w-0">
-          <h2 className="truncate text-sm font-semibold">
-            {selectedForm ?? 'Form preview'}
+          <div className="flex items-baseline gap-2">
+            <h2 className="truncate font-display text-[17px] font-medium leading-tight">
+              {selectedForm ? prettifyName(selectedForm) : 'The sheet'}
+            </h2>
             {selectedForm && (
-              <span className="ml-2 rounded bg-[var(--background)] px-1.5 py-0.5 text-[10px] uppercase tracking-wide text-[var(--muted)]">
+              <span className="shrink-0 rounded-sm border border-line px-1 py-px font-mono text-[9px] uppercase tracking-[0.14em] text-ink-faint">
                 {selectedFormKind}
               </span>
             )}
-          </h2>
-          <p className="text-xs text-[var(--muted)]">{status}</p>
+          </div>
+          <p
+            className={`font-mono text-[10px] uppercase tracking-[0.12em] ${
+              completedFile ? 'text-seal' : isFilling ? 'text-pen' : 'text-ink-faint'
+            }`}
+          >
+            {status}
+          </p>
         </div>
         <div className="flex shrink-0 items-center gap-2">
-          <label className="sr-only" htmlFor="anim-style">
-            Fill animation style
-          </label>
-          <select
-            id="anim-style"
-            value={animStyle}
-            onChange={(event) => updateStyle(event.currentTarget.value as AnimStyle)}
-            className="rounded border border-[var(--border)] bg-[var(--background)] px-1.5 py-1 text-xs text-[var(--muted)] outline-none focus:border-[var(--accent)]"
-            title="Fill animation style"
-          >
-            <option value="typewriter">⌨️ Typewriter</option>
-            <option value="fade">✨ Fade</option>
-            <option value="instant">⚡ Instant</option>
-          </select>
-          {animStyle !== 'instant' && (
-            <select
-              value={speed}
-              onChange={(event) => updateSpeed(Number(event.currentTarget.value))}
-              className="rounded border border-[var(--border)] bg-[var(--background)] px-1.5 py-1 text-xs text-[var(--muted)] outline-none focus:border-[var(--accent)]"
-              title="Animation speed"
-            >
-              <option value={0.5}>0.5×</option>
-              <option value={1}>1×</option>
-              <option value={2}>2×</option>
-            </select>
+          {selectedForm && (
+            <>
+              <Segmented
+                options={ANIM_STYLES}
+                value={animStyle}
+                onChange={updateStyle}
+                title="Fill animation style"
+              />
+              {animStyle !== 'instant' && (
+                <Segmented
+                  options={SPEEDS}
+                  value={speed}
+                  onChange={updateSpeed}
+                  title="Animation speed"
+                />
+              )}
+            </>
           )}
-          {isFilling && (
-            <span className="inline-block h-3 w-3 animate-spin rounded-full border-2 border-[var(--accent)] border-t-transparent" />
-          )}
+          {isFilling && <Working className="h-3 w-3 text-pen" />}
           {completedFile && (
             <a
               href={`/api/completed-file/${encodeURIComponent(completedBasename ?? '')}`}
               target="_blank"
               rel="noreferrer"
-              className="rounded-full bg-green-100 px-2 py-1 text-xs font-medium text-green-800 hover:underline dark:bg-green-950 dark:text-green-200"
+              className="font-mono text-[10.5px] text-pen hover:underline"
             >
-              Saved ✓ — open
+              open file ↗
             </a>
           )}
         </div>
       </header>
 
-      <div className="min-h-0 flex-1">
+      <div className="relative min-h-0 flex-1">
+        {completedFile && (
+          <FiledSeal
+            fieldCount={fieldSteps.length}
+            href={`/api/completed-file/${encodeURIComponent(completedBasename ?? '')}`}
+          />
+        )}
+
         {!selectedForm ? (
-          <div className="h-full overflow-y-auto p-6">
-            <h3 className="text-lg font-semibold">
-              Fill out forms automatically from your documents
+          <div className="h-full overflow-y-auto px-7 py-8 sm:px-9">
+            <h3 className="max-w-md font-display text-[30px] font-medium leading-[1.15] tracking-tight">
+              Paperwork,{' '}
+              <em className="italic text-pen">written for you.</em>
             </h3>
-            <ol className="mt-3 list-inside list-decimal space-y-1 text-sm text-[var(--muted)]">
-              <li>Upload or pick a source document on the left (e.g. a resume)</li>
-              <li>Choose a form below or from the dropdown</li>
-              <li>
-                Click &quot;Fill form from document&quot; — and watch it fill in
-                right here
-              </li>
-            </ol>
-            <p className="mt-2 text-sm text-[var(--muted)]">
-              You can also just ask in the chat — e.g.{' '}
-              <em>&quot;fill the travel request using resume 2&quot;</em>. For
-              details a document can&apos;t provide (dates, SSN, preferences),
-              include them in your message.
+            <p className="mt-3 max-w-md text-[13.5px] leading-relaxed text-ink-soft">
+              Add a document, choose a form, and watch it fill itself — line by
+              line, in ink. Anything the document can&apos;t answer, tell the
+              agent in the conversation.
             </p>
 
-            <h4 className="mt-6 text-xs font-medium uppercase tracking-wide text-[var(--muted)]">
-              Available forms
-            </h4>
+            <ol className="mt-6 max-w-md space-y-2 text-[13px] text-ink-soft">
+              <li className="flex gap-3">
+                <span className="font-mono text-[11px] text-pen">1</span>
+                Drop a source document on the left — a resume works well
+              </li>
+              <li className="flex gap-3">
+                <span className="font-mono text-[11px] text-pen">2</span>
+                Choose a form here or from the picker
+              </li>
+              <li className="flex gap-3">
+                <span className="font-mono text-[11px] text-pen">3</span>
+                Press “Fill from document” and watch the writing happen
+              </li>
+            </ol>
+
+            <h4 className="eyebrow mt-10">Available forms</h4>
             {availableForms.length === 0 ? (
-              <p className="mt-2 text-sm text-[var(--muted)]">Loading forms…</p>
+              <p className="mt-3 font-display text-[13.5px] italic text-ink-faint">
+                Fetching forms…
+              </p>
             ) : (
-              <div className="mt-2 grid gap-2 sm:grid-cols-2">
+              <ul className="mt-2 max-w-lg">
                 {availableForms.map((form) => (
-                  <button
-                    key={`${form.kind}:${form.name}`}
-                    type="button"
-                    onClick={() => onSelectForm?.(form.name, form.kind)}
-                    className="rounded-md border border-[var(--border)] bg-[var(--background)] p-3 text-left transition-colors hover:border-[var(--accent)]"
-                  >
-                    <span className="flex items-center justify-between gap-2">
-                      <span className="truncate text-sm font-medium">
-                        {form.name}
+                  <li key={`${form.kind}:${form.name}`}>
+                    <button
+                      type="button"
+                      onClick={() => onSelectForm?.(form.name, form.kind)}
+                      className="group flex w-full items-baseline justify-between gap-3 border-b border-line py-2.5 text-left transition-colors hover:border-line-strong"
+                    >
+                      <span className="min-w-0">
+                        <span className="block truncate font-display text-[15px] capitalize transition-colors group-hover:text-pen">
+                          {prettifyName(form.name)}
+                        </span>
                       </span>
-                      <span className="shrink-0 rounded bg-[var(--card)] px-1.5 py-0.5 text-[10px] uppercase tracking-wide text-[var(--muted)]">
+                      <span className="flex shrink-0 items-baseline gap-2 font-mono text-[9.5px] uppercase tracking-[0.14em] text-ink-faint">
                         {form.kind}
+                        <span
+                          aria-hidden
+                          className="text-[11px] opacity-0 transition-opacity group-hover:opacity-100"
+                        >
+                          →
+                        </span>
                       </span>
-                    </span>
-                    <span className="mt-1 block truncate text-xs text-[var(--muted)]">
-                      {form.label}
-                    </span>
-                  </button>
+                    </button>
+                  </li>
                 ))}
-              </div>
+              </ul>
             )}
           </div>
         ) : selectedFormKind === 'pdf' ? (
@@ -358,91 +507,111 @@ export function FormViewerPanel({
             showOverlays={!completedBasename?.endsWith('.pdf')}
           />
         ) : (
-          <div className="h-full space-y-3 overflow-y-auto p-4">
+          <div className="h-full overflow-y-auto px-6 py-5 sm:px-8">
             {!jsonForm && (
-              <p className="text-sm text-[var(--muted)]">Loading form…</p>
+              <p className="font-display text-[13.5px] italic text-ink-faint">
+                Unfolding the form…
+              </p>
             )}
-            {jsonForm?.fields.map((field) => {
-              const value = revealedValues.get(field.id);
-              const isCurrent = currentField?.fieldId === field.id;
-              const missed =
-                replayDone &&
-                run &&
-                !value &&
-                skipSteps.some((s) => s.label.includes(field.label));
-              return (
-                <div
-                  key={field.id}
-                  className={`rounded-md border p-3 transition-colors duration-300 ${
-                    isCurrent
-                      ? 'border-[var(--accent)] bg-[var(--background)]'
-                      : value
-                        ? 'border-green-300 dark:border-green-900'
-                        : 'border-[var(--border)]'
-                  }`}
-                >
-                  <p className="text-xs font-medium uppercase tracking-wide text-[var(--muted)]">
-                    {field.label}
-                    {field.required && <span className="text-red-500"> *</span>}
+            {jsonForm && (
+              <div className="mb-6">
+                <h3 className="font-display text-[21px] font-medium tracking-tight">
+                  {jsonForm.title}
+                </h3>
+                {jsonForm.description && (
+                  <p className="mt-1 text-[12.5px] text-ink-soft">
+                    {jsonForm.description}
                   </p>
-                  <p className="mt-1 min-h-[1.25rem] text-sm">
-                    {value ? (
-                      <span className="animate-rise-in inline-block">{value}</span>
-                    ) : isCurrent ? (
-                      animStyle === 'typewriter' && currentField?.detail ? (
-                        <TypewriterText
-                          text={currentField.detail}
-                          durationMs={stepDelayMs}
-                        />
-                      ) : (
-                        <span className="animate-pulse text-[var(--accent)]">
-                          writing…
+                )}
+              </div>
+            )}
+            <div className="max-w-xl space-y-5 pb-6">
+              {jsonForm?.fields.map((field) => {
+                const value = revealedValues.get(field.id);
+                const isCurrent = currentField?.fieldId === field.id;
+                const missed =
+                  replayDone &&
+                  run &&
+                  !value &&
+                  skipSteps.some((s) => s.label.includes(field.label));
+                return (
+                  <div key={field.id}>
+                    <p className="font-mono text-[9.5px] uppercase tracking-[0.14em] text-ink-soft">
+                      {field.label}
+                      {field.required && <span className="text-seal"> *</span>}
+                    </p>
+                    <p
+                      className={`min-h-[1.6rem] border-b pb-1 pt-0.5 font-mono text-[13px] transition-colors duration-300 ${
+                        isCurrent
+                          ? 'border-pen'
+                          : value
+                            ? 'border-line-strong'
+                            : 'border-line'
+                      }`}
+                    >
+                      {value ? (
+                        <span className="animate-rise-in inline-block text-pen">
+                          {value}
                         </span>
-                      )
-                    ) : missed ? (
-                      <span className="text-amber-600 dark:text-amber-400">
-                        not found in document
-                      </span>
-                    ) : (
-                      <span className="text-[var(--muted)]">—</span>
-                    )}
-                  </p>
-                </div>
-              );
-            })}
+                      ) : isCurrent ? (
+                        animStyle === 'typewriter' && currentField?.detail ? (
+                          <span className="text-pen">
+                            <TypewriterText
+                              text={currentField.detail}
+                              durationMs={stepDelayMs}
+                            />
+                          </span>
+                        ) : (
+                          <span className="ink-pulse text-pen">writing…</span>
+                        )
+                      ) : missed ? (
+                        <span className="font-display text-[13px] italic text-amber">
+                          not found in the document
+                        </span>
+                      ) : (
+                        <span aria-hidden>&nbsp;</span>
+                      )}
+                    </p>
+                  </div>
+                );
+              })}
+            </div>
           </div>
         )}
       </div>
 
       {/* Field feed strip for PDF mode, where values can't be shown in place (Tier A). */}
       {selectedFormKind === 'pdf' && run && fieldSteps.length > 0 && (
-        <footer className="border-t border-[var(--border)] px-4 py-2">
-          <div className="flex items-center gap-2 overflow-x-auto text-xs">
+        <footer className="shrink-0 border-t border-line px-4 py-2">
+          <div className="flex items-center gap-2 overflow-x-auto font-mono text-[10.5px]">
             {fieldSteps.slice(0, revealed).slice(-3).map((step) => (
               <span
                 key={step.id}
-                className="animate-rise-in shrink-0 rounded-full bg-[var(--background)] px-2 py-1 text-[var(--muted)]"
+                className="animate-rise-in flex shrink-0 items-center gap-1.5 rounded-full bg-sheet-tint px-2.5 py-1 text-ink-soft"
               >
-                ✏️ {step.label.replace(/^Filling /, '')}
+                <Glyph name="pen" className="h-2.5 w-2.5" />
+                {step.label.replace(/^Filling /, '')}
                 {step.detail ? `: ${step.detail}` : ''}
               </span>
             ))}
             {isFilling && currentField && (
-              <span className="shrink-0 rounded-full border border-[var(--accent)] px-2 py-1 text-[var(--accent)]">
-                ✏️ {currentField.label.replace(/^Filling /, '')}:{' '}
+              <span className="flex shrink-0 items-center gap-1.5 rounded-full border border-pen px-2.5 py-1 text-pen">
+                <Glyph name="pen" className="h-2.5 w-2.5" />
+                {currentField.label.replace(/^Filling /, '')}:{' '}
                 {animStyle === 'typewriter' && currentField.detail ? (
                   <TypewriterText
                     text={currentField.detail}
                     durationMs={stepDelayMs}
                   />
                 ) : (
-                  <span className="animate-pulse">…</span>
+                  <span className="ink-pulse">…</span>
                 )}
               </span>
             )}
             {replayDone && completedFile && (
-              <span className="shrink-0 text-green-600 dark:text-green-400">
-                ✓ {fieldSteps.length} fields filled
+              <span className="flex shrink-0 items-center gap-1.5 text-seal">
+                <Glyph name="check" className="h-3 w-3" />
+                {fieldSteps.length} fields · filed
               </span>
             )}
           </div>

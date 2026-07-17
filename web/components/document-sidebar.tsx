@@ -114,12 +114,16 @@ export function DocumentSidebar({
   }, [loadDocuments]);
 
   return (
-    <aside className="flex h-full flex-col gap-4">
-      <div>
-        <h2 className="text-sm font-semibold">Documents</h2>
-        <p className="mt-1 text-xs text-[var(--muted)]">
-          Upload a source document for form filling
-        </p>
+    <aside className="flex min-h-0 flex-1 flex-col gap-3 p-4">
+      <div className="flex items-baseline justify-between">
+        <h2 className="eyebrow">Documents</h2>
+        <button
+          type="button"
+          onClick={() => void loadDocuments()}
+          className="btn-quiet"
+        >
+          refresh
+        </button>
       </div>
 
       <FileUpload
@@ -133,64 +137,64 @@ export function DocumentSidebar({
         }}
       />
 
-      <div className="flex items-center justify-between">
-        <span className="text-xs font-medium uppercase tracking-wide text-[var(--muted)]">
-          {documents.length} file{documents.length === 1 ? '' : 's'}
-        </span>
-        <button
-          type="button"
-          onClick={() => void loadDocuments()}
-          className="text-xs text-[var(--accent)] hover:underline"
-        >
-          Refresh
-        </button>
-      </div>
-
       {isLoading && (
-        <p className="text-sm text-[var(--muted)]">Loading...</p>
+        <p className="font-display text-[13.5px] italic text-ink-faint">
+          Opening the cabinet…
+        </p>
       )}
 
-      {error && (
-        <p className="text-sm text-red-600 dark:text-red-400">{error}</p>
-      )}
+      {error && <p className="text-[12.5px] text-seal">{error}</p>}
 
       {!isLoading && !error && documents.length === 0 && (
-        <p className="text-sm text-[var(--muted)]">No documents yet.</p>
+        <p className="font-display text-[13.5px] italic text-ink-faint">
+          Nothing here yet. Add a resume to begin.
+        </p>
       )}
 
-      <ul className="space-y-2 overflow-y-auto">
+      <ul className="-mx-1.5 min-h-0 flex-1 space-y-0.5 overflow-y-auto px-1.5">
         {documents.map((doc) => {
           const isSelected = doc.name === selectedDocument;
 
           return (
-            <li
-              key={doc.name}
-              className={`rounded-lg border p-3 ${
-                isSelected
-                  ? 'border-[var(--accent)] bg-blue-50/40 dark:bg-blue-950/20'
-                  : 'border-[var(--border)] bg-[var(--card)]'
-              }`}
-            >
-              <p className="truncate text-sm font-medium">{doc.name}</p>
-              <p className="mt-1 text-xs text-[var(--muted)]">
-                {formatBytes(doc.sizeBytes)} · {formatDate(doc.modified)}
-                {isSelected && ' · selected'}
-              </p>
-              <div className="mt-2 flex gap-2">
+            <li key={doc.name}>
+              <div
+                className={`group flex items-start gap-2 rounded-md border-l-2 py-2 pl-2.5 pr-2 transition-colors ${
+                  isSelected
+                    ? 'border-pen bg-pen-wash'
+                    : 'border-transparent hover:bg-sheet-tint'
+                }`}
+              >
+                <button
+                  type="button"
+                  onClick={() => onSelectDocument?.(doc.name)}
+                  className="min-w-0 flex-1 text-left"
+                  title="Use as source"
+                >
+                  <span className="flex items-baseline gap-2">
+                    <span
+                      className={`truncate text-[13px] font-medium ${
+                        isSelected ? 'text-pen' : ''
+                      }`}
+                    >
+                      {doc.name}
+                    </span>
+                    {isSelected && (
+                      <span className="shrink-0 font-mono text-[9.5px] uppercase tracking-[0.12em] text-pen">
+                        in use
+                      </span>
+                    )}
+                  </span>
+                  <span className="mt-0.5 block font-mono text-[10.5px] text-ink-faint">
+                    {formatBytes(doc.sizeBytes)} · {formatDate(doc.modified)}
+                  </span>
+                </button>
                 <button
                   type="button"
                   disabled={isReading}
                   onClick={() => void readDocument(doc.name)}
-                  className="rounded border border-[var(--border)] px-2 py-1 text-xs hover:border-[var(--accent)]"
+                  className="btn-quiet shrink-0 pt-0.5 opacity-0 transition-opacity focus-visible:opacity-100 group-hover:opacity-100"
                 >
-                  Read
-                </button>
-                <button
-                  type="button"
-                  onClick={() => onSelectDocument?.(doc.name)}
-                  className="rounded border border-[var(--border)] px-2 py-1 text-xs hover:border-[var(--accent)]"
-                >
-                  Use as source
+                  read
                 </button>
               </div>
             </li>
@@ -199,22 +203,24 @@ export function DocumentSidebar({
       </ul>
 
       {preview && (
-        <div className="max-h-64 overflow-y-auto rounded-lg border border-[var(--border)] bg-[var(--card)] p-3">
-          <div className="mb-2 flex items-center justify-between">
-            <p className="text-xs font-medium">{preview.filename}</p>
+        <div className="max-h-56 shrink-0 overflow-y-auto rounded-md border border-line bg-sheet-tint p-3">
+          <div className="mb-2 flex items-center justify-between gap-2">
+            <p className="truncate font-mono text-[10.5px] text-ink-soft">
+              {preview.filename}
+            </p>
             <button
               type="button"
               onClick={() => setPreview(null)}
-              className="text-xs text-[var(--muted)] hover:text-[var(--foreground)]"
+              className="btn-quiet shrink-0"
             >
-              Close
+              close
             </button>
           </div>
-          <pre className="whitespace-pre-wrap text-xs text-[var(--muted)]">
+          <pre className="whitespace-pre-wrap font-mono text-[10.5px] leading-relaxed text-ink-soft">
             {preview.content}
           </pre>
           {preview.truncated && (
-            <p className="mt-2 text-xs italic text-[var(--muted)]">
+            <p className="mt-2 font-display text-[12px] italic text-ink-faint">
               Preview truncated.
             </p>
           )}

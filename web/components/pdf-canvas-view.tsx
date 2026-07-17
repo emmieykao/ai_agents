@@ -184,16 +184,18 @@ export function PdfCanvasView({
 
   if (error) {
     return (
-      <div className="flex h-full items-center justify-center p-6 text-sm text-red-600 dark:text-red-400">
+      <div className="flex h-full items-center justify-center p-6 text-[13px] text-seal">
         {error}
       </div>
     );
   }
 
   return (
-    <div ref={containerRef} className="h-full space-y-4 overflow-y-auto bg-[var(--background)] p-3">
+    <div ref={containerRef} className="h-full space-y-5 overflow-y-auto bg-sheet-tint/60 p-4 sm:p-5">
       {numPages === 0 && (
-        <p className="p-4 text-sm text-[var(--muted)]">Rendering PDF…</p>
+        <p className="p-4 font-display text-[13.5px] italic text-ink-faint">
+          Unrolling the pages…
+        </p>
       )}
       {Array.from({ length: numPages }, (_, pageIndex) => {
         const pageDims = layout?.pages[pageIndex];
@@ -203,7 +205,7 @@ export function PdfCanvasView({
         return (
           <div
             key={pageIndex}
-            className="relative mx-auto overflow-hidden rounded border border-[var(--border)] bg-white shadow-sm"
+            className="relative mx-auto overflow-hidden rounded-[3px] border border-line bg-white shadow-[0_1px_2px_rgba(35,40,48,0.06),0_14px_32px_-18px_rgba(35,40,48,0.3)]"
             style={
               pageDims
                 ? { aspectRatio: `${pageDims.width} / ${pageDims.height}` }
@@ -241,7 +243,7 @@ export function PdfCanvasView({
                     }}
                     className={`absolute overflow-hidden px-[0.3%] leading-tight transition-shadow duration-300 ${
                       isCurrent
-                        ? 'z-10 rounded-sm bg-blue-500/10 shadow-[0_0_0_2px_var(--accent)]'
+                        ? 'z-10 rounded-sm bg-pen-wash shadow-[0_0_0_1.5px_var(--pen)]'
                         : ''
                     } ${isMultiline ? '' : 'flex items-center'}`}
                     style={{
@@ -252,7 +254,7 @@ export function PdfCanvasView({
                       fontSize,
                     }}
                   >
-                    <span className="animate-rise-in block w-full whitespace-pre-wrap break-words text-left font-medium text-blue-800 dark:text-blue-800">
+                    <span className="animate-rise-in block w-full whitespace-pre-wrap break-words text-left font-mono font-medium text-[#2b4a9e]">
                       {isCurrent && currentField ? (
                         <TypewriterText
                           text={currentField.text}

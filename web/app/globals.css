@@ -1,36 +1,227 @@
 @import 'tailwindcss';
 
+/* ---------------------------------------------------------------------------
+   Inkwell — design tokens
+   The world of the app: paperwork, done by a careful hand.
+
+   Day: a limestone desk, sheets of paper, iron-gall ink for the reader,
+   fountain-pen blue for everything the agent writes, and one cinnabar
+   seal reserved for the moment a form is filed.
+
+   Night: the same desk by lamplight — navy paper, parchment text,
+   gilt for the agent's pen, silver for the margins.
+
+   The theme follows the OS preference until the user picks one with the
+   letterhead toggle (html[data-theme]). NOTE: the two dark blocks below
+   must stay identical — one serves the OS preference, one the toggle.
+--------------------------------------------------------------------------- */
+
 :root {
-  --background: #fafafa;
-  --foreground: #171717;
-  --muted: #737373;
-  --border: #e5e5e5;
-  --card: #ffffff;
-  --accent: #2563eb;
+  color-scheme: light;
+
+  /* the desk */
+  --desk: #e9e6dd;
+  --desk-deep: #ddd9cc;
+
+  /* sheets of paper */
+  --sheet: #fdfcf7;
+  --sheet-tint: #f4f2e9;
+
+  /* iron-gall ink (reading text) */
+  --ink: #232830;
+  --ink-soft: #5f6572;
+  --ink-faint: #8d919b;
+
+  /* ruled lines */
+  --line: #dcd8ca;
+  --line-strong: #b9b4a2;
+
+  /* the agent's pen */
+  --pen: #2b4a9e;
+  --pen-wash: rgba(43, 74, 158, 0.07);
+
+  /* the seal — completion only */
+  --seal: #b23a2a;
+  --seal-wash: rgba(178, 58, 42, 0.07);
+
+  /* marginalia (warnings, skipped fields) */
+  --amber: #8a670f;
+
+  /* paper grain, text selection, and how the seal inks onto the sheet */
+  --grain: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='p'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='180' height='180' filter='url(%23p)' opacity='0.05'/%3E%3C/svg%3E");
+  --selection: rgba(43, 74, 158, 0.16);
+  --seal-blend: multiply;
 }
 
 @media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-    --muted: #a3a3a3;
-    --border: #262626;
-    --card: #171717;
-    --accent: #3b82f6;
+  :root:not([data-theme='light']) {
+    color-scheme: dark;
+
+    --desk: #0c121d;
+    --desk-deep: #080d15;
+
+    --sheet: #131c2b;
+    --sheet-tint: #1a2536;
+
+    --ink: #e7e3d5;
+    --ink-soft: #9aa4b2;
+    --ink-faint: #707b8c;
+
+    --line: #253044;
+    --line-strong: #3a475f;
+
+    --pen: #d3ad5f;
+    --pen-wash: rgba(211, 173, 95, 0.09);
+
+    --seal: #d65c46;
+    --seal-wash: rgba(214, 92, 70, 0.1);
+
+    --amber: #c08a5a;
+
+    --grain: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='p'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='180' height='180' filter='url(%23p)' fill='%23ffffff' opacity='0.028'/%3E%3C/svg%3E");
+    --selection: rgba(211, 173, 95, 0.28);
+    --seal-blend: normal;
   }
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family:
-    ui-sans-serif,
-    system-ui,
-    -apple-system,
-    sans-serif;
+:root[data-theme='dark'] {
+  color-scheme: dark;
+
+  --desk: #0c121d;
+  --desk-deep: #080d15;
+
+  --sheet: #131c2b;
+  --sheet-tint: #1a2536;
+
+  --ink: #e7e3d5;
+  --ink-soft: #9aa4b2;
+  --ink-faint: #707b8c;
+
+  --line: #253044;
+  --line-strong: #3a475f;
+
+  --pen: #d3ad5f;
+  --pen-wash: rgba(211, 173, 95, 0.09);
+
+  --seal: #d65c46;
+  --seal-wash: rgba(214, 92, 70, 0.1);
+
+  --amber: #c08a5a;
+
+  --grain: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='p'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='180' height='180' filter='url(%23p)' fill='%23ffffff' opacity='0.028'/%3E%3C/svg%3E");
+  --selection: rgba(211, 173, 95, 0.28);
+  --seal-blend: normal;
 }
 
-/* Filled-value entrance animation for the form fill replay. */
+@theme inline {
+  --color-desk: var(--desk);
+  --color-desk-deep: var(--desk-deep);
+  --color-sheet: var(--sheet);
+  --color-sheet-tint: var(--sheet-tint);
+  --color-ink: var(--ink);
+  --color-ink-soft: var(--ink-soft);
+  --color-ink-faint: var(--ink-faint);
+  --color-line: var(--line);
+  --color-line-strong: var(--line-strong);
+  --color-pen: var(--pen);
+  --color-pen-wash: var(--pen-wash);
+  --color-seal: var(--seal);
+  --color-seal-wash: var(--seal-wash);
+  --color-amber: var(--amber);
+
+  --font-display: var(--font-newsreader), 'Iowan Old Style', Georgia, serif;
+  --font-sans: var(--font-schibsted), system-ui, -apple-system, sans-serif;
+  --font-mono: var(--font-plex-mono), ui-monospace, 'SF Mono', Menlo, monospace;
+}
+
+body {
+  background-color: var(--desk);
+  /* faint paper grain over the desk */
+  background-image: var(--grain);
+  color: var(--ink);
+  font-family: var(--font-schibsted), system-ui, -apple-system, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+::selection {
+  background: var(--selection);
+}
+
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--line-strong) transparent;
+}
+
+:focus-visible {
+  outline: 2px solid var(--pen);
+  outline-offset: 2px;
+  border-radius: 2px;
+}
+
+/* ---------------------------------------------------------------------------
+   Shared surfaces
+--------------------------------------------------------------------------- */
+
+/* A sheet of paper resting on the desk. */
+.sheet {
+  background: var(--sheet);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  box-shadow:
+    0 1px 2px rgba(35, 40, 48, 0.05),
+    0 14px 36px -20px rgba(35, 40, 48, 0.28);
+}
+
+/* Letterspaced section label. */
+.eyebrow {
+  font-family: var(--font-schibsted), system-ui, sans-serif;
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+}
+
+.btn-ink {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  border-radius: 8px;
+  background: var(--ink);
+  color: var(--sheet);
+  font-size: 13px;
+  font-weight: 500;
+  padding: 0.625rem 1rem;
+  transition: background-color 0.2s ease;
+}
+.btn-ink:hover:not(:disabled) {
+  background: var(--pen);
+}
+.btn-ink:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+.btn-quiet {
+  font-family: var(--font-plex-mono), ui-monospace, monospace;
+  font-size: 11px;
+  color: var(--ink-soft);
+  transition: color 0.15s ease;
+}
+.btn-quiet:hover:not(:disabled) {
+  color: var(--pen);
+}
+.btn-quiet:disabled {
+  opacity: 0.5;
+}
+
+/* ---------------------------------------------------------------------------
+   Motion
+--------------------------------------------------------------------------- */
+
+/* Filled-value entrance for the form fill replay. */
 @keyframes rise-in {
   from {
     opacity: 0;
@@ -44,4 +235,87 @@ body {
 
 .animate-rise-in {
   animation: rise-in 0.4s ease-out;
+}
+
+/* Page-load: sheets settle onto the desk. */
+@keyframes settle {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.enter {
+  opacity: 0;
+  animation: settle 0.55s cubic-bezier(0.2, 0.7, 0.2, 1) forwards;
+}
+
+/* Letterhead rule draws itself on load. */
+@keyframes rule-draw {
+  from {
+    transform: scaleX(0);
+  }
+  to {
+    transform: scaleX(1);
+  }
+}
+
+.rule-draw {
+  transform-origin: left;
+  animation: rule-draw 0.9s cubic-bezier(0.2, 0.7, 0.2, 1) 0.15s both;
+}
+
+/* The seal inks into light paper (multiply) but sits atop dark paper. */
+.seal-stamp {
+  mix-blend-mode: var(--seal-blend);
+}
+
+/* The seal pressing onto the page. */
+@keyframes stamp-in {
+  0% {
+    opacity: 0;
+    transform: rotate(-8deg) scale(1.7);
+  }
+  55% {
+    opacity: 1;
+    transform: rotate(-8deg) scale(0.93);
+  }
+  100% {
+    opacity: 1;
+    transform: rotate(-8deg) scale(1);
+  }
+}
+
+.stamp-in {
+  animation: stamp-in 0.45s cubic-bezier(0.2, 0.7, 0.3, 1) both;
+}
+
+/* Live indicator: a slow ink-drop pulse. */
+@keyframes ink-pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.25;
+  }
+}
+
+.ink-pulse {
+  animation: ink-pulse 1.4s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
 }

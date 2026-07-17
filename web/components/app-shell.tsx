@@ -6,12 +6,14 @@ import { Chat } from '@/components/chat';
 import { DocumentSidebar } from '@/components/document-sidebar';
 import { FormFillPanel } from '@/components/form-fill-panel';
 import { FormViewerPanel } from '@/components/form-viewer-panel';
+import { Glyph, InkDrop } from '@/components/icons';
 
 const SIDEBAR_WIDTH_KEY = 'form-agent:sidebar-width';
 const VIEWER_FRAC_KEY = 'form-agent:viewer-frac';
+const THEME_KEY = 'inkwell:theme';
 
-const GUTTER_PX = 10;
-const SIDEBAR_DEFAULT = 280;
+const GUTTER_PX = 12;
+const SIDEBAR_DEFAULT = 288;
 const SIDEBAR_MAX = 520;
 /** Below this width the sidebar snaps closed (drag it right to reopen). */
 const SIDEBAR_SNAP = 100;
@@ -20,7 +22,7 @@ function clamp(value: number, min: number, max: number): number {
   return Math.min(max, Math.max(min, value));
 }
 
-/** Vertical drag handle between panels. Drag to resize, double-click to collapse/restore. */
+/** Vertical drag handle between sheets. Drag to resize, double-click to collapse/restore. */
 function Gutter({
   onPointerDown,
   onDoubleClick,
@@ -35,11 +37,51 @@ function Gutter({
       title="Drag to resize · double-click to collapse"
       onPointerDown={onPointerDown}
       onDoubleClick={onDoubleClick}
-      className="group hidden cursor-col-resize items-stretch justify-center lg:flex"
+      className="group hidden cursor-col-resize items-center justify-center lg:flex"
       style={{ width: GUTTER_PX }}
     >
-      <div className="w-[3px] rounded-full bg-[var(--border)] transition-colors group-hover:bg-[var(--accent)] group-active:bg-[var(--accent)]" />
+      <div className="h-10 w-[2px] rounded-full bg-line-strong transition-colors group-hover:bg-pen group-active:bg-pen" />
     </div>
+  );
+}
+
+/**
+ * Day/night switch. Follows the OS preference until the user chooses;
+ * the choice is stamped on <html data-theme> (also pre-paint, in layout.tsx)
+ * and remembered.
+ */
+function ThemeToggle() {
+  const [theme, setTheme] = useState<'light' | 'dark' | null>(null);
+
+  useEffect(() => {
+    const stored = localStorage.getItem(THEME_KEY);
+    setTheme(
+      stored === 'dark' || stored === 'light'
+        ? stored
+        : window.matchMedia('(prefers-color-scheme: dark)').matches
+          ? 'dark'
+          : 'light',
+    );
+  }, []);
+
+  if (!theme) return null;
+
+  const next = theme === 'dark' ? 'light' : 'dark';
+
+  return (
+    <button
+      type="button"
+      onClick={() => {
+        document.documentElement.dataset.theme = next;
+        localStorage.setItem(THEME_KEY, next);
+        setTheme(next);
+      }}
+      title={next === 'dark' ? 'Switch to night' : 'Switch to day'}
+      className="flex items-center gap-1.5 font-mono text-[10.5px] uppercase tracking-[0.14em] text-ink-faint transition-colors hover:text-pen"
+    >
+      <Glyph name={next === 'dark' ? 'moon' : 'sun'} className="h-3 w-3" />
+      {next === 'dark' ? 'night' : 'day'}
+    </button>
   );
 }
 
@@ -172,30 +214,58 @@ export function AppShell() {
       : [];
 
   return (
-    <div className="mx-auto flex min-h-screen max-w-[110rem] flex-col px-4 py-6">
+    <div className="mx-auto flex min-h-screen max-w-[110rem] flex-col px-4 py-5 sm:px-6 lg:h-screen">
       {/* Full-screen shield while dragging so the PDF iframe can't swallow pointer events. */}
       {isDragging && (
         <div className="fixed inset-0 z-50 cursor-col-resize select-none" />
       )}
 
-      <header className="mb-4 border-b border-[var(--border)] pb-4">
-        <h1 className="text-2xl font-semibold tracking-tight">Form Agent</h1>
-        <p className="mt-1 text-sm text-[var(--muted)]">
-          Upload a document, pick a form, and let the agent fill it for you.
-          <span className="hidden lg:inline"> Drag the dividers to resize panels.</span>
-        </p>
+      {/* Letterhead */}
+      <header className="enter mb-5 shrink-0">
+        <div className="flex items-end justify-between gap-4 pb-3.5">
+          <div className="flex items-baseline gap-2.5">
+            <InkDrop className="h-[18px] w-[18px] self-center text-ink" />
+            <h1 className="font-display text-[26px] font-semibold leading-none tracking-tight">
+              Inkwell
+            </h1>
+            <p className="hidden font-display text-[15px] italic leading-none text-ink-soft sm:block">
+              Forms, written for you.
+            </p>
+          </div>
+          <div className="flex items-center gap-4">
+            <p className="flex items-center gap-2 font-mono text-[10.5px] uppercase tracking-[0.14em] text-ink-faint">
+              {isChatLoading ? (
+                <>
+                  <span className="ink-pulse inline-block h-1.5 w-1.5 rounded-full bg-pen" />
+                  <span className="text-pen">The agent is writing</span>
+                </>
+              ) : (
+                'Ready'
+              )}
+            </p>
+            <ThemeToggle />
+          </div>
+        </div>
+        <div className="rule-draw h-px bg-line-strong" />
       </header>
 
       <div
         ref={containerRef}
-        className={isDesktop ? 'flex min-h-0 flex-1 items-stretch' : 'flex flex-1 flex-col gap-4'}
+        className={
+          isDesktop
+            ? 'flex min-h-0 flex-1 items-stretch'
+            : 'flex flex-1 flex-col gap-4'
+        }
       >
-        {/* Sidebar */}
+        {/* Left rail: the cabinet — documents on top, the fill desk pinned below. */}
         <div
           className="min-w-0 overflow-hidden"
           style={isDesktop ? { width: sidebarWidth, flexShrink: 0 } : undefined}
         >
-          <div className="flex flex-col gap-4" style={isDesktop ? { minWidth: 220 } : undefined}>
+          <div
+            className="sheet enter flex h-full min-h-0 flex-col overflow-hidden"
+            style={isDesktop ? { minWidth: 236, animationDelay: '60ms' } : { animationDelay: '60ms' }}
+          >
             <DocumentSidebar
               selectedDocument={selectedDocument}
               preferredDocumentKeywords={documentKeywords}
@@ -211,6 +281,7 @@ export function AppShell() {
                 }
               }}
             />
+            <div className="mx-4 h-px shrink-0 bg-line" />
             <FormFillPanel
               refreshKey={formsRefreshKey}
               selectedDocument={selectedDocument}
@@ -225,9 +296,9 @@ export function AppShell() {
 
         <Gutter onPointerDown={startSidebarDrag} onDoubleClick={toggleSidebar} />
 
-        {/* Form viewer */}
+        {/* The sheet: form being written */}
         <div
-          className="flex min-w-0 flex-col"
+          className="flex min-h-0 min-w-0 flex-col"
           style={isDesktop ? { flexGrow: viewerFrac, flexBasis: 0 } : undefined}
         >
           <FormViewerPanel
@@ -240,10 +311,14 @@ export function AppShell() {
 
         <Gutter onPointerDown={startSplitDrag} onDoubleClick={toggleSplit} />
 
-        {/* Chat */}
+        {/* Correspondence */}
         <div
-          className="flex min-w-0 flex-col"
-          style={isDesktop ? { flexGrow: 1 - viewerFrac, flexBasis: 0 } : undefined}
+          className="sheet enter flex min-h-[420px] min-w-0 flex-col overflow-hidden lg:min-h-0"
+          style={
+            isDesktop
+              ? { flexGrow: 1 - viewerFrac, flexBasis: 0, animationDelay: '180ms' }
+              : { animationDelay: '180ms' }
+          }
         >
           <Chat
             selectedDocument={selectedDocument}

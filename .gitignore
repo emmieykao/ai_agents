@@ -8,3 +8,8 @@ completed/
 web/node_modules/
 web/.next/
 web/.env.local
+
+# Playwright
+web/test-results/
+web/playwright-report/
+web/tsconfig.tsbuildinfo

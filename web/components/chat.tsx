@@ -5,6 +5,39 @@ import { DefaultChatTransport, isTextUIPart, type UIMessage } from 'ai';
 import { useEffect, useMemo, useRef } from 'react';
 import { AgentActivityPanel } from './agent-activity';
 
+/**
+ * Render the agent's prose with just enough inline markdown — **bold** and
+ * `code` — to keep its answers readable without a markdown dependency.
+ */
+function InlineProse({ text }: { text: string }) {
+  const nodes: React.ReactNode[] = [];
+  const pattern = /\*\*([^*]+)\*\*|`([^`]+)`/g;
+  let cursor = 0;
+  let match: RegExpExecArray | null;
+  let key = 0;
+
+  while ((match = pattern.exec(text)) !== null) {
+    if (match.index > cursor) nodes.push(text.slice(cursor, match.index));
+    if (match[1] !== undefined) {
+      nodes.push(
+        <strong key={key++} className="font-semibold">
+          {match[1]}
+        </strong>,
+      );
+    } else {
+      nodes.push(
+        <code key={key++} className="font-mono text-[12px] text-pen">
+          {match[2]}
+        </code>,
+      );
+    }
+    cursor = match.index + match[0].length;
+  }
+  if (cursor < text.length) nodes.push(text.slice(cursor));
+
+  return <>{nodes}</>;
+}
+
 function MessageText({ message }: { message: UIMessage }) {
   const text = message.parts
     .filter(isTextUIPart)
@@ -13,7 +46,22 @@ function MessageText({ message }: { message: UIMessage }) {
 
   if (!text) return null;
 
-  return <p className="whitespace-pre-wrap">{text}</p>;
+  return (
+    <p className="whitespace-pre-wrap font-display text-[15px] leading-relaxed">
+      <InlineProse text={text} />
+    </p>
+  );
+}
+
+/**
+ * The one-click fill sends the agent detailed instructions; show the intent,
+ * not the plumbing. Everything else renders verbatim.
+ */
+function displayUserText(text: string): string {
+  if (text.startsWith('Fill the ') && text.includes('Map fields accurately')) {
+    return `${text.split('.')[0]}.`;
+  }
+  return text;
 }
 
 type ChatProps = {
@@ -84,6 +132,13 @@ export function Chat({
     onMessagesChange?.(messages);
   }, [messages, onMessagesChange]);
 
+  // Keep the newest exchange in view as messages stream in.
+  const scrollRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const node = scrollRef.current;
+    if (node) node.scrollTop = node.scrollHeight;
+  }, [messages, isLoading]);
+
   useEffect(() => {
     if (!fillTrigger || fillTrigger === lastFillTrigger.current || !selectedForm) {
       return;
@@ -121,21 +176,29 @@ export function Chat({
   ]);
 
   return (
-    <div className="flex flex-1 flex-col">
-      <AgentActivityPanel messages={messages} status={status} />
+    <div className="flex min-h-0 flex-1 flex-col">
+      <header className="flex shrink-0 items-center justify-between border-b border-line px-5 py-3">
+        <h2 className="eyebrow">Correspondence</h2>
+        {isLoading && (
+          <span className="flex items-center gap-1.5 font-mono text-[10px] uppercase tracking-[0.12em] text-pen">
+            <span className="ink-pulse inline-block h-1.5 w-1.5 rounded-full bg-pen" />
+            writing
+          </span>
+        )}
+      </header>
 
-      <div className="flex-1 space-y-4 overflow-y-auto pb-4">
+      <div ref={scrollRef} className="min-h-0 flex-1 space-y-5 overflow-y-auto px-5 py-4">
+        <AgentActivityPanel messages={messages} status={status} />
+
         {messages.length === 0 && (
-          <div className="rounded-lg border border-dashed border-[var(--border)] bg-[var(--card)] p-6 text-sm text-[var(--muted)]">
-            <p className="font-medium text-[var(--foreground)]">How it works</p>
-            <ol className="mt-2 list-inside list-decimal space-y-1">
-              <li>Upload a document on the left</li>
-              <li>Choose a form template</li>
-              <li>Click &quot;Fill form from document&quot;</li>
-            </ol>
-            <p className="mt-3">
-              You can also chat naturally — say &quot;fill contact-info using my
-              resume&quot; without typing exact filenames.
+          <div className="px-4 py-14 text-center">
+            <p className="font-display text-[16px] italic leading-relaxed text-ink-soft">
+              The agent reads your documents
+              <br />
+              and answers here.
+            </p>
+            <p className="mt-3 font-mono text-[10.5px] text-ink-faint">
+              try — “fill the travel request from my resume”
             </p>
           </div>
         )}
@@ -145,41 +208,40 @@ export function Chat({
             return null;
           }
 
+          if (message.role === 'user') {
+            return (
+              <div key={message.id} className="flex justify-end">
+                <div className="max-w-[85%] rounded-lg rounded-br-sm bg-ink px-4 py-3 text-[13px] leading-relaxed text-sheet">
+                  <p className="whitespace-pre-wrap">
+                    {displayUserText(
+                      message.parts
+                        .filter(isTextUIPart)
+                        .map((part) => part.text)
+                        .join(''),
+                    )}
+                  </p>
+                </div>
+              </div>
+            );
+          }
+
           return (
-            <div
-              key={message.id}
-              className={`rounded-lg border border-[var(--border)] p-4 ${
-                message.role === 'user'
-                  ? 'ml-8 bg-[var(--card)]'
-                  : 'mr-8 bg-[var(--card)]'
-              }`}
-            >
-              <p className="mb-2 text-xs font-medium uppercase tracking-wide text-[var(--muted)]">
-                {message.role === 'user' ? 'You' : 'Agent'}
-              </p>
-              {message.role === 'user' ? (
-                <p className="whitespace-pre-wrap">
-                  {message.parts
-                    .filter(isTextUIPart)
-                    .map((part) => part.text)
-                    .join('')}
-                </p>
-              ) : (
-                <MessageText message={message} />
-              )}
+            <div key={message.id} className="pr-4">
+              <p className="eyebrow mb-1.5 !text-[9.5px]">Inkwell</p>
+              <MessageText message={message} />
             </div>
           );
         })}
 
         {error && (
-          <div className="rounded-lg border border-red-300 bg-red-50 p-4 text-sm text-red-800 dark:border-red-900 dark:bg-red-950 dark:text-red-200">
+          <div className="rounded-md border border-seal/30 bg-seal-wash p-3 text-[12.5px] text-seal">
             {error.message}
           </div>
         )}
       </div>
 
       <form
-        className="sticky bottom-0 border-t border-[var(--border)] bg-[var(--background)] pt-4"
+        className="shrink-0 border-t border-line p-3.5"
         onSubmit={(event) => {
           event.preventDefault();
           const form = event.currentTarget;
@@ -193,16 +255,13 @@ export function Chat({
         <div className="flex gap-2">
           <input
             name="message"
-            className="flex-1 rounded-lg border border-[var(--border)] bg-[var(--card)] px-4 py-3 text-sm outline-none focus:border-[var(--accent)]"
-            placeholder="Ask about your documents or forms..."
+            className="flex-1 rounded-md border border-line bg-sheet px-3.5 py-2.5 text-[13.5px] outline-none transition-colors placeholder:text-ink-faint focus:border-pen"
+            placeholder="Ask for a form, or add missing details…"
             disabled={isLoading}
+            autoComplete="off"
           />
-          <button
-            type="submit"
-            disabled={isLoading}
-            className="rounded-lg bg-[var(--accent)] px-5 py-3 text-sm font-medium text-white disabled:opacity-50"
-          >
-            {isLoading ? 'Working...' : 'Send'}
+          <button type="submit" disabled={isLoading} className="btn-ink px-4">
+            {isLoading ? 'Working…' : 'Send'}
           </button>
         </div>
       </form>
